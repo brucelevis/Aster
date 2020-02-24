@@ -6,7 +6,10 @@ include_directories(thirdparty/include)
 LINK_DIRECTORIES(thirdparty/lib/glfw)
 
 add_executable(Aster
-		main.cpp
+        main.cpp
+        world.cpp
+		#renderer
+		renderer/renderer.cpp
 		#thirdparty
 		thirdparty/src/glad/glad.c)
 
