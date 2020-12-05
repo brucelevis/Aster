@@ -2,6 +2,7 @@
 
 #include "image.h"
 #include "enums.h"
+#include "framecontext.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
@@ -44,17 +45,6 @@ class ITask
 {
 public:
   virtual void Execute() = 0;
-};
-
-struct FrameContext
-{
-  DescriptorSetStorage* descriptorSetLayoutStorage;
-  UniformsContextStorage* uniformsContextStorage;
-  PipelineStorage* pipelineStorage;
-  vk::RenderPass renderPass;
-  vk::Framebuffer framebuffer;
-  vk::CommandBuffer commandBuffer;
-  uint32_t subpassNumber;
 };
 
 typedef std::function<void(FrameContext&)> RenderPassExecutionFunction;

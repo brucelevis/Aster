@@ -1,6 +1,7 @@
 #include "pipelinestorage.h"
 #include "descriptorsetstorage.h"
 #include "core.h"
+#include "framecontext.h"
 
 namespace vk
 {
@@ -85,4 +86,9 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const Verte
   storage[key] = std::move(pp);
 
   return pipeline;
+}
+
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const FrameContext& frameContext)
+{
+  return GetPipeline(program, vertexInputDeclaration, topology, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber);
 }

@@ -11,6 +11,7 @@
 
 class Core;
 class DescriptorSetStorage;
+struct FrameContext;
 
 class PipelineKey
 {
@@ -48,6 +49,7 @@ public:
   PipelineStorage(Core& core, DescriptorSetStorage& dsStorage);
 
   Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber);
+  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const FrameContext& frameContext);
 
 private:
   Core& core;
