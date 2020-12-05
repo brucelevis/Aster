@@ -55,8 +55,8 @@ int main()
   Core core(window, extensions, count, vk::Extent2D{ 800, 600 });
 
   //create shaders
-  Shader vertexShader = core.CreateShader("super_vertex", ReadFile("../data/shaders/vert.spv"));
-  Shader fragmentShader = core.CreateShader("super_fragment", ReadFile("../data/shaders/frag.spv"));
+  Shader vertexShader = core.CreateShader("super_vertex", ReadFile("../data/shaders/spirv/dummy.vert.spv"));
+  Shader fragmentShader = core.CreateShader("super_fragment", ReadFile("../data/shaders/spirv/dummy.frag.spv"));
   auto program = ShaderProgram(std::move(vertexShader), std::move(fragmentShader));
 
   //create buffer
