@@ -2,13 +2,13 @@
 
 #include <vulkan/vulkan.hpp>
 
-class UniformsContextStorage;
+class UniformsAccessorStorage;
 class PipelineStorage;
 
 struct FrameContext
 {
   vk::Extent2D BackbufferSize;
-  UniformsContextStorage* uniformsContextStorage;
+  UniformsAccessorStorage* uniformsAccessorStorage;
   PipelineStorage* pipelineStorage;
   vk::RenderPass renderPass;
   vk::Framebuffer framebuffer;

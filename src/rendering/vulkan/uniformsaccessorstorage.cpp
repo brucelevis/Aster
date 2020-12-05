@@ -1,14 +1,14 @@
-#include "uniformscontextstorage.h"
+#include "uniformsaccessorstorage.h"
 #include "core.h"
 #include "Shader.h"
 
-UniformsContextStorage::UniformsContextStorage(Core& core, vk::DescriptorPool descriptorPool)
+UniformsAccessorStorage::UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool)
   : core(core)
   , descriptorPool(descriptorPool)
 {
 }
 
-UniformsContext* UniformsContextStorage::GetUniformsContext(const ShaderProgram& program)
+UniformsAccessor* UniformsAccessorStorage::GetUniformsAccessor(const ShaderProgram& program)
 {
   const PipelineUniforms& uniforms = program.GetCombinedUniformsInformation();
   const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
@@ -19,15 +19,15 @@ UniformsContext* UniformsContextStorage::GetUniformsContext(const ShaderProgram&
     return it->second.get();
   }
 
-  auto uContext = std::make_unique<UniformsContext>(core, descriptorPool, layouts, uniforms);
-  UniformsContext* context = uContext.get();
+  auto uContext = std::make_unique<UniformsAccessor>(core, descriptorPool, layouts, uniforms);
+  UniformsAccessor* context = uContext.get();
 
   contexts[uniforms] = std::move(uContext);
 
   return context;
 }
 
-void UniformsContextStorage::Reset()
+void UniformsAccessorStorage::Reset()
 {
   contexts.clear();
 }

@@ -6,10 +6,10 @@
 
 class Core;
 
-class UniformsContext
+class UniformsAccessor
 {
 public:
-  UniformsContext(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
+  UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
 
   template<class T>
   T* GetUniformBuffer(const UniformName& name)
@@ -18,10 +18,10 @@ public:
     const UniformBindingDescription& bindingDescription = uniforms.GetBindingDescription(setBinding.set, setBinding.binding);
     
     if (bindingDescription.type != UniformType::UniformBuffer)
-      throw std::runtime_error("UniformsContext::GetUniformBuffer, uniform is not UBO type.");
+      throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform is not UBO type.");
 
     if (sizeof(T) != bindingDescription.size)
-      throw std::runtime_error("UniformsContext::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
+      throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
 
     const auto it = ownedBuffers.find(name);
     if (it != ownedBuffers.end())

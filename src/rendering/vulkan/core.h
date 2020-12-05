@@ -4,7 +4,7 @@
 #include "FramebufferStorage.h"
 #include "pipelinestorage.h"
 #include "renderpassstorage.h"
-#include "uniformscontextstorage.h"
+#include "uniformsaccessorstorage.h"
 
 #include "swapchain.h"
 #include "Shader.h"
@@ -25,7 +25,7 @@ struct FrameResources
   vk::UniqueSemaphore swapchainImageAckquired;
   vk::UniqueSemaphore renderingFinished;
   vk::UniqueCommandBuffer cmdBuffer;
-  std::unique_ptr<UniformsContextStorage> ucStorage;
+  std::unique_ptr<UniformsAccessorStorage> uaStorage;
   std::unique_ptr<RenderGraph> renderGraph;
 
 };

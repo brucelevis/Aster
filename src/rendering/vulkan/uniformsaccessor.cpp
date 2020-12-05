@@ -1,7 +1,7 @@
-#include "uniformscontext.h"
+#include "uniformsaccessor.h"
 #include "core.h"
 
-UniformsContext::UniformsContext(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms)
+UniformsAccessor::UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms)
   : core(core)
   , layouts(layouts)
   , uniforms(uniforms)
@@ -14,7 +14,7 @@ UniformsContext::UniformsContext(Core& core, vk::DescriptorPool descriptorPool, 
   ownedDescriptorSets = core.GetLogicalDevice().allocateDescriptorSetsUnique(allocInfo);
 }
 
-std::vector<vk::DescriptorSet> UniformsContext::GetUpdatedDescriptorSets()
+std::vector<vk::DescriptorSet> UniformsAccessor::GetUpdatedDescriptorSets()
 {
   for (auto& [_, buf] : ownedBuffers)
     buf.Unmap();

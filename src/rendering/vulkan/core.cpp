@@ -151,7 +151,7 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
     fr.cmdBufferFreeToUse = logicalDevice->createFenceUnique(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
     fr.swapchainImageAckquired = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
     fr.renderingFinished = logicalDevice->createSemaphoreUnique(vk::SemaphoreCreateInfo());
-    fr.ucStorage = std::make_unique<UniformsContextStorage>(*this, descriptorPool.get());
+    fr.uaStorage = std::make_unique<UniformsAccessorStorage>(*this, descriptorPool.get());
     fr.renderGraph = std::make_unique<RenderGraph>(*this);
 
     const auto cmdBufferAllocateInfo = vk::CommandBufferAllocateInfo()
@@ -206,7 +206,7 @@ RenderGraph* Core::BeginFrame()
   fr.cmdBuffer->reset(vk::CommandBufferResetFlags());
 
   fr.swapchainImage = swapchain->AcquireNextImage(fr.swapchainImageAckquired.get());
-  fr.ucStorage->Reset();
+  fr.uaStorage->Reset();
   fr.renderGraph->Reset();
 
   const auto bfd = BackbufferDescription()
@@ -214,7 +214,7 @@ RenderGraph* Core::BeginFrame()
     .SetSize(swapchain->GetSurfaceSize());
 
   fr.renderGraph->SetCommandBuffer(fr.cmdBuffer.get());
-  fr.renderGraph->SetUniformsContextStorage(fr.ucStorage.get());
+  fr.renderGraph->SetUniformsAccessorStorage(fr.uaStorage.get());
   fr.renderGraph->SetBackbufferDescription(bfd);
   fr.renderGraph->AddAttachmentResource(BACKBUFFER_RESOURCE_ID, fr.swapchainImage, ImageUsage::Present);
 

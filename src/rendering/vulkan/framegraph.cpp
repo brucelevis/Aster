@@ -137,9 +137,9 @@ void RenderGraph::SetCommandBuffer(vk::CommandBuffer cmdBuf)
   cmdBuffer = cmdBuf;
 }
 
-void RenderGraph::SetUniformsContextStorage(UniformsContextStorage* s)
+void RenderGraph::SetUniformsAccessorStorage(UniformsAccessorStorage* s)
 {
-  ucStorage = s;
+  uaStorage = s;
 }
 
 void RenderGraph::Reset()
@@ -168,7 +168,7 @@ void RenderGraph::Execute()
 
   FrameContext context;
   context.BackbufferSize = backbufferDescription.size;
-  context.uniformsContextStorage = ucStorage;
+  context.uniformsAccessorStorage = uaStorage;
   context.pipelineStorage = &core.GetPipelineStorage();
   context.framebuffer = framebuffer;
   context.renderPass = renderPass;

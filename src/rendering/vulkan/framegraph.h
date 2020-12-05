@@ -16,7 +16,7 @@ class Core;
 class PipelineStorage;
 class FramebufferStorage;
 class RenderPassStorage;
-class UniformsContextStorage;
+class UniformsAccessorStorage;
 
 typedef std::string ResourceId;
 typedef unsigned int SubpassId;
@@ -114,7 +114,7 @@ public:
 
   void SetCommandBuffer(vk::CommandBuffer cmdBuf);
 
-  void SetUniformsContextStorage(UniformsContextStorage* s);
+  void SetUniformsAccessorStorage(UniformsAccessorStorage* s);
 
   void Reset();
 
@@ -131,7 +131,7 @@ private:
 private:
   Core& core;
 
-  UniformsContextStorage* ucStorage;
+  UniformsAccessorStorage* uaStorage;
   vk::CommandBuffer cmdBuffer;
   BackbufferDescription backbufferDescription;
   std::vector<RenderSubpass> subpasses;

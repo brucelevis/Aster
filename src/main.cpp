@@ -87,7 +87,7 @@ int main()
         VertexInputDeclaration vid = Vertex::GetVID();
         Pipeline* p = context.pipelineStorage->GetPipeline(program, vid, vk::PrimitiveTopology::eTriangleList, context);
 
-        UniformsContext* uniforms = context.uniformsContextStorage->GetUniformsContext(program);
+        UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(program);
 
         Resource* resourceUBO = uniforms->GetUniformBuffer<Resource>("Resource");
         resourceUBO->color = glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f };
