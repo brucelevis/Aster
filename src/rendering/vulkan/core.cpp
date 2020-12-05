@@ -141,8 +141,7 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
   //create storages
   fbStorage = std::make_unique<FramebufferStorage>(logicalDevice.get());
   rpStorage = std::make_unique<RenderPassStorage>(*this);
-  dsStorage = std::make_unique<DescriptorSetStorage>(*this);
-  ppStorage = std::make_unique<PipelineStorage>(*this, *dsStorage);
+  ppStorage = std::make_unique<PipelineStorage>(*this);
 
   //create virtual frames without swapchain image
   currentVirtualFrame = 0;
@@ -180,11 +179,6 @@ RenderPassStorage& Core::GetRenderPassStorage()
 PipelineStorage& Core::GetPipelineStorage()
 {
   return *ppStorage;
-}
-
-DescriptorSetStorage& Core::GetDescriptorSetStorage()
-{
-  return *dsStorage;
 }
 
 vk::Device Core::GetDebugDevice()

@@ -17,7 +17,6 @@ class PipelineStorage;
 class FramebufferStorage;
 class RenderPassStorage;
 class UniformsContextStorage;
-class DescriptorSetStorage;
 
 typedef std::string ResourceId;
 typedef unsigned int SubpassId;

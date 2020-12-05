@@ -1,5 +1,6 @@
 #include "uniformscontextstorage.h"
 #include "core.h"
+#include "Shader.h"
 
 UniformsContextStorage::UniformsContextStorage(Core& core, vk::DescriptorPool descriptorPool)
   : core(core)
@@ -7,8 +8,11 @@ UniformsContextStorage::UniformsContextStorage(Core& core, vk::DescriptorPool de
 {
 }
 
-UniformsContext* UniformsContextStorage::GetUniformsContext(const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms)
+UniformsContext* UniformsContextStorage::GetUniformsContext(const ShaderProgram& program)
 {
+  const PipelineUniforms& uniforms = program.GetCombinedUniformsInformation();
+  const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
+
   const auto it = contexts.find(uniforms);
   if (it != contexts.end())
   {

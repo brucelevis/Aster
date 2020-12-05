@@ -57,7 +57,7 @@ int main()
   //create shaders
   Shader vertexShader = core.CreateShader("super_vertex", ReadFile("../data/shaders/spirv/dummy.vert.spv"));
   Shader fragmentShader = core.CreateShader("super_fragment", ReadFile("../data/shaders/spirv/dummy.frag.spv"));
-  auto program = ShaderProgram(std::move(vertexShader), std::move(fragmentShader));
+  auto program = ShaderProgram(core, std::move(vertexShader), std::move(fragmentShader));
 
   //create buffer
   Vertex vertices[3]{
@@ -85,11 +85,9 @@ int main()
       .SetRenderCallback([&](FrameContext& context) 
       {
         VertexInputDeclaration vid = Vertex::GetVID();
-        Pipeline* p = context.pipelineStorage->GetPipeline(program, vid, vk::PrimitiveTopology::eTriangleList, { 800, 600 }, context.renderPass, context.subpassNumber);
-        
-        const PipelineUniforms& pipelineUniformsDescription = program.GetCombinedUniformsInformation();
-        std::vector<vk::DescriptorSetLayout> layouts = context.descriptorSetLayoutStorage->GetDescriptorSetLayouts(pipelineUniformsDescription);
-        UniformsContext* uniforms = context.uniformsContextStorage->GetUniformsContext(layouts, pipelineUniformsDescription);
+        Pipeline* p = context.pipelineStorage->GetPipeline(program, vid, vk::PrimitiveTopology::eTriangleList, context);
+
+        UniformsContext* uniforms = context.uniformsContextStorage->GetUniformsContext(program);
 
         Resource* resourceUBO = uniforms->GetUniformBuffer<Resource>("Resource");
         resourceUBO->color = glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f };

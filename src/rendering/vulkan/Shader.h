@@ -6,6 +6,8 @@
 
 #include <string>
 
+class Core;
+
 class Shader
 {
 public:
@@ -30,7 +32,8 @@ private:
 class ShaderProgram
 {
 public:
-  ShaderProgram(Shader&& vertex, Shader&& fragment);
+  ShaderProgram(Core& core, Shader&& vertex, Shader&& fragment);
+  ~ShaderProgram();
 
   inline const Shader& GetVertexShader() const
   {
@@ -47,9 +50,20 @@ public:
     return uniforms;
   }
 
+  inline const std::vector<vk::DescriptorSetLayout> GetLayouts() const
+  {
+    return layouts;
+  }
+
 private:
+  std::vector<vk::DescriptorSetLayout> CreateLayouts(Core& core, const PipelineUniforms& uniforms) const;
+
+private:
+  Core& core;
+
   Shader vertex;
   Shader fragment;
 
   PipelineUniforms uniforms;
+  std::vector<vk::DescriptorSetLayout> layouts;
 };

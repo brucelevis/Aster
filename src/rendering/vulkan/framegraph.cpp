@@ -169,7 +169,6 @@ void RenderGraph::Execute()
   FrameContext context;
   context.BackbufferSize = backbufferDescription.size;
   context.uniformsContextStorage = ucStorage;
-  context.descriptorSetLayoutStorage = &core.GetDescriptorSetStorage();
   context.pipelineStorage = &core.GetPipelineStorage();
   context.framebuffer = framebuffer;
   context.renderPass = renderPass;

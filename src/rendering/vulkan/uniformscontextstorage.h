@@ -6,13 +6,14 @@
 #include <map>
 
 class Core;
+class ShaderProgram;
 
 class UniformsContextStorage
 {
 public:
   UniformsContextStorage(Core& core, vk::DescriptorPool descriptorPool);
 
-  UniformsContext* GetUniformsContext(const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
+  UniformsContext* GetUniformsContext(const ShaderProgram& program);
 
   void Reset();
 

@@ -4,7 +4,6 @@
 #include "FramebufferStorage.h"
 #include "pipelinestorage.h"
 #include "renderpassstorage.h"
-#include "descriptorsetstorage.h"
 #include "uniformscontextstorage.h"
 
 #include "swapchain.h"
@@ -45,8 +44,6 @@ public:
 
   PipelineStorage& GetPipelineStorage();
 
-  DescriptorSetStorage& GetDescriptorSetStorage();
-
   vk::Device GetDebugDevice();
 
   vk::Format GetDebugSurfaceFormat();
@@ -84,7 +81,6 @@ private:
   std::unique_ptr<FramebufferStorage> fbStorage;
   std::unique_ptr<RenderPassStorage> rpStorage;
   std::unique_ptr<PipelineStorage> ppStorage;
-  std::unique_ptr<DescriptorSetStorage> dsStorage;
 
   uint32_t hostVisibleMemoryIndex;
 };

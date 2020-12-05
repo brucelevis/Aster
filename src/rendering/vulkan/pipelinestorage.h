@@ -11,7 +11,6 @@
 #include <map>
 
 class Core;
-class DescriptorSetStorage;
 struct FrameContext;
 
 class PipelineKey
@@ -47,14 +46,13 @@ private:
 class PipelineStorage
 {
 public:
-  PipelineStorage(Core& core, DescriptorSetStorage& dsStorage);
+  PipelineStorage(Core& core);
 
   Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber);
   Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const FrameContext& frameContext);
 
 private:
   Core& core;
-  DescriptorSetStorage& dsStorage;
 
   std::map<PipelineKey, std::unique_ptr<Pipeline>> storage;
 };

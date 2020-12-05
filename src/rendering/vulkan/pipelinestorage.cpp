@@ -1,5 +1,4 @@
 #include "pipelinestorage.h"
-#include "descriptorsetstorage.h"
 #include "core.h"
 #include "framecontext.h"
 
@@ -59,9 +58,8 @@ bool PipelineKey::operator<(const PipelineKey& r) const
     std::tie(r.vertexShader, r.fragmentShader, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass);
 }
 
-PipelineStorage::PipelineStorage(Core& core, DescriptorSetStorage& dsStorage)
+PipelineStorage::PipelineStorage(Core& core)
   : core(core)
-  , dsStorage(dsStorage)
 {
 }
 
@@ -79,7 +77,7 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const Verte
   if (storage.find(key) != storage.end())
     return storage[key].get();
 
-  const std::vector<vk::DescriptorSetLayout> layouts = dsStorage.GetDescriptorSetLayouts(program.GetCombinedUniformsInformation());
+  const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
   std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, viewportExtent, renderPass, subpassNumber);
   Pipeline* pipeline = pp.get();
