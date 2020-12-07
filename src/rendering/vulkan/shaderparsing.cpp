@@ -31,8 +31,6 @@ void PipelineUniforms::AddUniform(unsigned int set, unsigned int binding, const 
   }
 
   UniformSetDescription& setRef = sets.at(set);
-  if (setRef.inUse)
-    throw std::runtime_error("Can't add new uniform binding: set already in use.");
   setRef.inUse = true;
 
   if (binding >= setRef.bindings.size())
