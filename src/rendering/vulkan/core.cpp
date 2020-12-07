@@ -120,7 +120,7 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
 
   //create swapchain
   const int swapchainImagesCount = 2;
-  swapchain = std::make_unique<Swapchain>(surface.get(), windowSize, *instance, physicalDevice, *logicalDevice, presentFamilyIndex, graphicsFamilyIndex, vk::PresentModeKHR::eFifo, swapchainImagesCount, presentQueue);
+  swapchain = std::make_unique<Swapchain>(surface.get(), windowSize, *instance, physicalDevice, *logicalDevice, presentFamilyIndex, graphicsFamilyIndex, vk::PresentModeKHR::eImmediate, swapchainImagesCount, presentQueue);
 
   //create descriptor pool
   std::vector<vk::DescriptorPoolSize> dscPoolSizes;
