@@ -38,6 +38,13 @@ RenderSubpass& RenderSubpass::AddOutputColorAttachment(const OutputColorAttachme
   return *this;
 }
 
+RenderSubpass& RenderSubpass::AddDepthStencilAttachment(const DepthStencilAttachmentDescription& desc)
+{
+  depthStencilAttachment = desc;
+
+  return *this;
+}
+
 RenderSubpass& RenderSubpass::AddOutputBuffer()
 {
   return *this;
@@ -153,15 +160,25 @@ void RenderGraph::Reset()
 
 void RenderGraph::Execute()
 {
-  const auto clearColor = vk::ClearValue()
-    .setColor(vk::ClearColorValue{ std::array<float,4>{ 0.0f, 0.0f, 1.0f, 1.0f} });
+  std::vector<vk::ClearValue> clearColors;
+  for (const auto& usage : imageAttachmentResourceUsages)
+  {
+    vk::ClearValue clearValue;
+
+    if (usage == ImageUsage::DepthStencil)
+      clearValue = vk::ClearDepthStencilValue(1.0f, 0.0f);
+    else
+      clearValue = vk::ClearColorValue{ std::array<float,4>{ 0.0f, 0.0f, 1.0f, 1.0f} };
+
+    clearColors.push_back(clearValue);
+  }
 
   const auto rpBeginInfo = vk::RenderPassBeginInfo()
     .setRenderPass(renderPass)
     .setFramebuffer(framebuffer)
     .setRenderArea(vk::Rect2D{ {0,0}, backbufferDescription.size })
-    .setClearValueCount(1)
-    .setPClearValues(&clearColor);
+    .setClearValueCount(clearColors.size())
+    .setPClearValues(clearColors.data());
 
   cmdBuffer.begin(vk::CommandBufferBeginInfo());
   cmdBuffer.beginRenderPass(rpBeginInfo, vk::SubpassContents::eInline);
@@ -217,6 +234,15 @@ vk::RenderPass RenderGraph::CreateRenderpass()
       );
     }
 
+    if (subpass.depthStencilAttachment.has_value())
+    {
+      const DepthStencilAttachmentDescription& desc = subpass.depthStencilAttachment.value();
+      AttachmentId fbId = resourceIdToAttachmentIdMap[desc.id];
+      subkey.depthStencilAttachmentReference = vk::AttachmentReference()
+        .setAttachment(fbId)
+        .setLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal);
+    }
+
     subpassKeys.push_back(std::move(subkey));
   }
 
@@ -257,6 +283,23 @@ void RenderGraph::AllocateSubpassesResources()
       const AttachmentId attId = static_cast<AttachmentId>(imageAttachmentResources.size());
       imageAttachmentResources.push_back(img.GetView());
       imageAttachmentResourceUsages.push_back(ImageUsage::Default);
+      resourceIdToAttachmentIdMap[desc.id] = attId;
+
+      ownedImages.push_back(std::move(img));
+    }
+
+    if (subpass.depthStencilAttachment.has_value())
+    {
+      const DepthStencilAttachmentDescription& desc = subpass.depthStencilAttachment.value();
+
+      if (resourceIdToAttachmentIdMap.find(desc.id) != resourceIdToAttachmentIdMap.end())
+        throw std::runtime_error("AllocateSubpassesResources: can't add a new depth|stencil resource: index already in use.");
+
+      Image img = core.AllocateDepthStencilImage(vk::Format::eD32SfloatS8Uint, backbufferDescription.size);
+
+      const AttachmentId attId = static_cast<AttachmentId>(imageAttachmentResources.size());
+      imageAttachmentResources.push_back(img.GetView());
+      imageAttachmentResourceUsages.push_back(ImageUsage::DepthStencil);
       resourceIdToAttachmentIdMap[desc.id] = attId;
 
       ownedImages.push_back(std::move(img));

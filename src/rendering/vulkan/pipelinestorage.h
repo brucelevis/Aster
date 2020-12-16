@@ -25,6 +25,8 @@ public:
 
   PipelineKey& SetTopology(const vk::PrimitiveTopology t);
 
+  PipelineKey& SetDepthStencilSettings(const DepthStencilSettings& s);
+
   PipelineKey& SetViewportExtent(const vk::Extent2D e);
 
   PipelineKey& SetRenderPass(const vk::RenderPass r);
@@ -38,6 +40,7 @@ private:
   std::string fragmentShader;
   VertexInputDeclaration vertexInputDeclaration;
   vk::PrimitiveTopology topology;
+  DepthStencilSettings depthStencilSettings;
   vk::Extent2D viewportExtent;
   vk::RenderPass renderpass;
   uint32_t subpass;
@@ -48,8 +51,8 @@ class PipelineStorage
 public:
   PipelineStorage(Core& core);
 
-  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber);
-  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const FrameContext& frameContext);
+  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber);
+  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext);
 
 private:
   Core& core;

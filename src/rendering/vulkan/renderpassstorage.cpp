@@ -24,6 +24,9 @@ namespace
     case ImageUsage::Present:
       return vk::ImageLayout::ePresentSrcKHR;
 
+    case ImageUsage::DepthStencil:
+      return vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
     default:
       return vk::ImageLayout::eColorAttachmentOptimal;
     }
@@ -83,11 +86,13 @@ vk::RenderPass RenderPassStorage::GetRenderPass(const RenderPassKey& key)
   for (int i = 0; i < key.AttachmentsUsages.size(); ++i)
   {
     const vk::ImageLayout finalLayout = ::GetLayoutFromUsage(key.AttachmentsUsages[i]);
+    const vk::Format format = key.AttachmentsUsages[i] == ImageUsage::DepthStencil ? vk::Format::eD32SfloatS8Uint : key.backbufferFormat;
+    const vk::AttachmentLoadOp lOp = (key.AttachmentsUsages[i] == ImageUsage::Present) || (key.AttachmentsUsages[i] == ImageUsage::DepthStencil) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
 
     const auto desc = vk::AttachmentDescription()
-      .setFormat(key.backbufferFormat)
+      .setFormat(format)
       .setSamples(vk::SampleCountFlagBits::e1)
-      .setLoadOp(vk::AttachmentLoadOp::eClear)
+      .setLoadOp(lOp)
       .setStoreOp(vk::AttachmentStoreOp::eStore)
       .setInitialLayout(vk::ImageLayout::eUndefined)
       .setFinalLayout(finalLayout);
@@ -104,6 +109,9 @@ vk::RenderPass RenderPassStorage::GetRenderPass(const RenderPassKey& key)
       .setPInputAttachments(sk.inputAttachmentReferences.data())
       .setColorAttachmentCount(static_cast<uint32_t>(sk.outputColorAttachmentReferences.size()))
       .setPColorAttachments(sk.outputColorAttachmentReferences.data());
+
+    if (sk.depthStencilAttachmentReference.has_value())
+      sd.setPDepthStencilAttachment(&sk.depthStencilAttachmentReference.value());
 
     subpassesDescriptions.push_back(std::move(sd));
   }

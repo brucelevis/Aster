@@ -34,6 +34,12 @@ PipelineKey& PipelineKey::SetTopology(const vk::PrimitiveTopology t)
   return *this;
 }
 
+PipelineKey& PipelineKey::SetDepthStencilSettings(const DepthStencilSettings& s)
+{
+  depthStencilSettings = s;
+  return *this;
+}
+
 PipelineKey& PipelineKey::SetViewportExtent(const vk::Extent2D e)
 {
   viewportExtent = e;
@@ -63,13 +69,14 @@ PipelineStorage::PipelineStorage(Core& core)
 {
 }
 
-Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber)
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber)
 {
   const auto key = PipelineKey()
     .SetVertexShaderName(program.GetVertexShader().GetName())
     .SetFragmentShaderName(program.GetFragmentShader().GetName())
     .SetVertexInputDeclaration(vertexInputDeclaration)
     .SetTopology(topology)
+    .SetDepthStencilSettings(depthStencilSettings)
     .SetViewportExtent(viewportExtent)
     .SetRenderPass(renderPass)
     .SetSubpassNumber(subpassNumber);
@@ -79,14 +86,14 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const Verte
 
   const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
-  std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, viewportExtent, renderPass, subpassNumber);
+  std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber);
   Pipeline* pipeline = pp.get();
   storage[key] = std::move(pp);
 
   return pipeline;
 }
 
-Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const FrameContext& frameContext)
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext)
 {
-  return GetPipeline(program, vertexInputDeclaration, topology, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber);
+  return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber);
 }

@@ -6,6 +6,22 @@
 
 class VertexInputDeclaration;
 
+struct DepthStencilSettings
+{
+  bool depthTestEnabled = false;
+  bool depthWriteEnabled = false;
+
+  inline DepthStencilSettings& SetDepthTestEnabled(bool b) {
+    depthTestEnabled = b;
+    return *this;
+  }
+
+  inline DepthStencilSettings& SetDepthWriteEnabled(bool b) {
+    depthWriteEnabled = b;
+    return *this;
+  }
+};
+
 class Pipeline
 {
 public:
@@ -14,6 +30,7 @@ public:
     const VertexInputDeclaration& vertexInputDeclaration,
     const std::vector<vk::DescriptorSetLayout> layouts,
     const vk::PrimitiveTopology topology,
+    const DepthStencilSettings& depthStencilSettings,
     const vk::Extent2D viewportExtent,
     const vk::RenderPass renderpass,
     const uint32_t subpass);

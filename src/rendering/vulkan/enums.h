@@ -3,5 +3,6 @@
 enum class ImageUsage
 {
   Default,
-  Present
+  Present,
+  DepthStencil,
 };

@@ -11,6 +11,7 @@
 #include <queue>
 #include <map>
 #include <set>
+#include <optional>
 
 class Core;
 class PipelineStorage;
@@ -33,6 +34,11 @@ struct InputAttachmentDescription
 {
   ResourceId id;
   vk::ImageLayout layout;
+};
+
+struct DepthStencilAttachmentDescription
+{
+  ResourceId id;
 };
 
 struct OutputColorAttachmentDescription
@@ -66,6 +72,8 @@ public:
 
   RenderSubpass& AddOutputColorAttachment(const OutputColorAttachmentDescription& desc);
 
+  RenderSubpass& AddDepthStencilAttachment(const DepthStencilAttachmentDescription& desc);
+
   RenderSubpass& AddOutputBuffer();
 
   RenderSubpass& AddOutputSampler();
@@ -79,6 +87,7 @@ private:
   std::vector<OutputColorAttachmentDescription> outputColorAttachments;
 
   std::vector<ImageAttachmentDescription> imageResourceDescriptions;
+  std::optional<DepthStencilAttachmentDescription> depthStencilAttachment;
 };
 
 struct BackbufferDescription

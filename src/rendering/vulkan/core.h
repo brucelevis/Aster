@@ -56,7 +56,11 @@ public:
 
   Buffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
 
+  Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask);
+
   Image Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
+
+  Image AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent);
 
   vk::PhysicalDevice GetPhysicalDevice(vk::Instance instance);
 
@@ -83,4 +87,5 @@ private:
   std::unique_ptr<PipelineStorage> ppStorage;
 
   uint32_t hostVisibleMemoryIndex;
+  uint32_t deviceLocalMemoryIndex;
 };

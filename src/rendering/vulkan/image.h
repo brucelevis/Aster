@@ -27,10 +27,11 @@ public:
     view = logicalDevice.createImageViewUnique(viewCreateInfo);
   }
 
-  Image(vk::UniqueImage img, vk::UniqueImageView view)
+  Image(vk::UniqueImage img, vk::UniqueImageView view, vk::UniqueDeviceMemory memory)
   {
-    image = std::move(img);
-    view = std::move(view);
+    this->image = std::move(img);
+    this->view = std::move(view);
+    this->memory = std::move(memory);
   }
 
   vk::ImageView GetView() const
@@ -42,4 +43,5 @@ private:
   vk::Image swapchainImage;
   vk::UniqueImage image;
   vk::UniqueImageView view;
+  vk::UniqueDeviceMemory memory;
 };

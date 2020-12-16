@@ -9,6 +9,7 @@
 #include <vector>
 #include <tuple>
 #include <memory>
+#include <optional>
 
 class Core;
 
@@ -18,6 +19,7 @@ struct SubpassKey
 
   std::vector<vk::AttachmentReference> inputAttachmentReferences;
   std::vector<vk::AttachmentReference> outputColorAttachmentReferences;
+  std::optional<vk::AttachmentReference> depthStencilAttachmentReference;
 };
 
 class RenderPassKey

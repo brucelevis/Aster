@@ -99,18 +99,26 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
 
   //get memory types index
   hostVisibleMemoryIndex = -1;
+  deviceLocalMemoryIndex = -1;
   vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
   for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i)
   {
     const vk::MemoryType& memType = memoryProperties.memoryTypes[i];
-    if (memType.propertyFlags & (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent))
+    if ( (hostVisibleMemoryIndex == -1) && memType.propertyFlags & (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent))
     {
       hostVisibleMemoryIndex = i;
-      break;
+    }
+
+    if ((deviceLocalMemoryIndex == -1) && memType.propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal)
+    {
+      deviceLocalMemoryIndex = i;
     }
   }
   if (hostVisibleMemoryIndex == -1)
     throw std::runtime_error("No host visible memory heap found");
+
+  if (deviceLocalMemoryIndex == -1)
+    throw std::runtime_error("No device local memory heap found");
 
   //create command pool
   const auto cmdPoolCreateInfo = vk::CommandPoolCreateInfo()
@@ -274,13 +282,13 @@ Buffer Core::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage)
   return Buffer{ logicalDevice.get(), std::move(buf), std::move(memory), size };
 }
 
-Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
+Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask)
 {
   const auto imageCreateInfo = vk::ImageCreateInfo()
     //.setFlags()
-    .setImageType(vk::ImageType::e2D)
+    .setImageType(type)
     .setFormat(format)
-    .setExtent(vk::Extent3D{ extent.width, extent.height, 0 })
+    .setExtent(extent)
     .setMipLevels(1)
     .setArrayLayers(1)
     .setSamples(vk::SampleCountFlagBits::e1)
@@ -291,8 +299,18 @@ Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsa
 
   vk::UniqueImage img = logicalDevice->createImageUnique(imageCreateInfo);
 
+  const vk::MemoryRequirements memRec = logicalDevice->getImageMemoryRequirements(img.get());
+
+  const auto memAllocateInfo = vk::MemoryAllocateInfo()
+    .setAllocationSize(memRec.size)
+    .setMemoryTypeIndex(deviceLocalMemoryIndex);
+
+  vk::UniqueDeviceMemory memory = logicalDevice->allocateMemoryUnique(memAllocateInfo);
+
+  logicalDevice->bindImageMemory(img.get(), memory.get(), 0);
+
   const auto subresourceRange = vk::ImageSubresourceRange()
-    .setAspectMask(vk::ImageAspectFlagBits::eColor)
+    .setAspectMask(aspectMask)
     .setBaseMipLevel(0)
     .setLevelCount(1)
     .setBaseArrayLayer(0)
@@ -306,7 +324,17 @@ Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsa
 
   vk::UniqueImageView view = logicalDevice->createImageViewUnique(viewCreateInfo);
 
-  return Image{ std::move(img), std::move(view) };
+  return Image{ std::move(img), std::move(view), std::move(memory) };
+}
+
+Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
+{
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usage, vk::ImageAspectFlagBits::eColor);
+}
+
+Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent)
+{
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
 }
 
 vk::PhysicalDevice Core::GetPhysicalDevice(vk::Instance instance)

@@ -6,6 +6,7 @@ Pipeline::Pipeline(vk::Device logicalDevice,
   const VertexInputDeclaration& vertexInputDeclaration,
   const std::vector<vk::DescriptorSetLayout> layouts,
   const vk::PrimitiveTopology topology,
+  const DepthStencilSettings& depthStencilSettings,
   const vk::Extent2D viewportExtent,
   const vk::RenderPass renderpass,
   const uint32_t subpass)
@@ -79,6 +80,13 @@ Pipeline::Pipeline(vk::Device logicalDevice,
     .setAttachmentCount(1)
     .setPAttachments(&colorBlendAttachmentState);
 
+  const auto depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo()
+    .setDepthTestEnable(depthStencilSettings.depthTestEnabled)
+    .setDepthWriteEnable(depthStencilSettings.depthWriteEnabled)
+    .setDepthCompareOp(vk::CompareOp::eLess)
+    .setDepthBoundsTestEnable(false)
+    .setStencilTestEnable(false);
+
   const auto pipelineLayoutCreateInfo = vk::PipelineLayoutCreateInfo()
     .setSetLayoutCount(layouts.size())
     .setPSetLayouts(layouts.data());
@@ -94,7 +102,7 @@ Pipeline::Pipeline(vk::Device logicalDevice,
     .setPViewportState(&viewportState)
     .setPRasterizationState(&rasterizationStateCreateInfo)
     .setPMultisampleState(&multisampleStateCreateInfo)
-    .setPDepthStencilState(nullptr)
+    .setPDepthStencilState(&depthStencilStateCreateInfo)
     .setPColorBlendState(&colorBlendStateCreateInfo)
     .setPDynamicState(nullptr)
     .setLayout(layout.get())

@@ -20,7 +20,7 @@
 
 struct Vertex
 {
-  glm::vec2 position;
+  glm::vec3 position;
   glm::vec4 color;
 
   static VertexInputDeclaration GetVID()
@@ -36,7 +36,6 @@ struct Vertex
 
 struct Resource
 {
-  glm::vec4 color;
   float t;
 };
 
@@ -60,14 +59,18 @@ int main()
   auto program = ShaderProgram(core, std::move(vertexShader), std::move(fragmentShader));
 
   //create buffer
-  Vertex vertices[3]{
-    { {0.0f, -0.5f}, {1.0f, 1.0f, 1.0f, 1.0f} },
-    { {0.5f, 0.5f}, {1.0f, 0.0f, 1.0f, 1.0f}},
-    { {-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f, 1.0f}}
+  Vertex vertices[6]{
+    { {0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 1.0f, 1.0f} },
+    { {0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 1.0f, 1.0f}},
+    { {-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 1.0f, 1.0f}},
+
+    { {0.0f, -0.7f, -1.0f}, {0.0f, 0.0f, 0.0f, 1.0f} },
+    { {0.7f, 0.7, -1.0f}, {0.0f, 0.0f, 0.0f, 1.0f}},
+    { {-0.2f, 0.9f, -1.0f}, {0.0f, 0.0f, 0.0f, 1.0f}}
   };
 
-  Buffer vertBuffer = core.AllocateBuffer(sizeof(Vertex) * 3, vk::BufferUsageFlagBits::eVertexBuffer);
-  vertBuffer.UploadMemory(vertices, sizeof(Vertex) * 3, 0);
+  Buffer vertBuffer = core.AllocateBuffer(sizeof(Vertex) * 6, vk::BufferUsageFlagBits::eVertexBuffer);
+  vertBuffer.UploadMemory(vertices, sizeof(Vertex) * 6, 0);
   vk::Buffer vkbuf = vertBuffer.GetBuffer();
   vk::DeviceSize offset = 0;
 
@@ -82,22 +85,26 @@ int main()
     RenderGraph* rg = core.BeginFrame();
     rg->AddRenderSubpass()
       .AddOutputColorAttachment(OutputColorAttachmentDescription{BACKBUFFER_RESOURCE_ID})
+      .AddDepthStencilAttachment(DepthStencilAttachmentDescription{"depth"})
       .SetRenderCallback([&](FrameContext& context) 
       {
-        VertexInputDeclaration vid = Vertex::GetVID();
-        Pipeline* p = context.pipelineStorage->GetPipeline(program, vid, vk::PrimitiveTopology::eTriangleList, context);
+        const VertexInputDeclaration vid = Vertex::GetVID();
+        const auto depthStencil = DepthStencilSettings()
+          .SetDepthTestEnabled(true)
+          .SetDepthWriteEnabled(true);
+        
+        Pipeline* p = context.pipelineStorage->GetPipeline(program, vid, vk::PrimitiveTopology::eTriangleList, depthStencil, context);
 
         UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(program);
 
         Resource* resourceUBO = uniforms->GetUniformBuffer<Resource>("Resource");
-        resourceUBO->color = glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f };
         resourceUBO->t = dt;
         std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
 
         context.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, p->GetPipeline());
         context.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, p->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
         context.commandBuffer.bindVertexBuffers(0, 1, &vkbuf, &offset);
-        context.commandBuffer.draw(3, 1, 0, 0);
+        context.commandBuffer.draw(6, 1, 0, 0);
       });
 
     core.EndFrame();
