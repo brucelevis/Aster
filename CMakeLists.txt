@@ -51,7 +51,8 @@ set_target_properties(ASTER_EXE PROPERTIES
                         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
                         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/Debug")
 
-target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} RENDERING_LIB) 
-
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/Catch2")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shaderparsing")
+add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/ecs")
+
+target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} RENDERING_LIB ECS_LIB) 
