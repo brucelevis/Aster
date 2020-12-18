@@ -168,7 +168,7 @@ void RenderGraph::Execute()
     if (usage == ImageUsage::DepthStencil)
       clearValue = vk::ClearDepthStencilValue(1.0f, 0.0f);
     else
-      clearValue = vk::ClearColorValue{ std::array<float,4>{ 0.0f, 0.0f, 1.0f, 1.0f} };
+      clearValue = vk::ClearColorValue{ std::array<float,4>{ 0.5529f, 0.6f, 0.6823f, 1.0f} };
 
     clearColors.push_back(clearValue);
   }
