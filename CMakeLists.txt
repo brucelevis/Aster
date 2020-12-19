@@ -18,7 +18,7 @@ set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}")
 
 file(GLOB_RECURSE SPIRV_SOURCES "${SPIRV_DEP_DIR}/*.cpp" "${SPIRV_DEP_DIR}/*.cc")
-file(GLOB_RECURSE RENDERING_SOURCES "${CMAKE_SOURCE_DIR}/src/rendering/*.cpp" "${CMAKE_SOURCE_DIR}/src/rendering/*.h" "${CMAKE_SOURCE_DIR}/src/rendering/*.hpp")
+file(GLOB_RECURSE RENDERING_SOURCES "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.cpp" "${CMAKE_SOURCE_DIR}/src/rendering/*.h" "${CMAKE_SOURCE_DIR}/src/rendering/*.hpp")
 file(GLOB_RECURSE COMPILED_SHADERS "${CMAKE_SOURCE_DIR}/shaders/*spv")
 
 include_directories(

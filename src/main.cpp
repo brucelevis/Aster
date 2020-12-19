@@ -1,9 +1,9 @@
-#include <rendering/vulkan/core.h>
-#include <rendering/vulkan/fileutils.h>
-#include <rendering/vulkan/Shader.h>
-#include <rendering/vulkan/pipeline.h>
-#include <rendering/vulkan/vertexinputdeclaration.h>
-#include <rendering/vulkan/FramebufferStorage.h>
+#include <engine/rendering/vulkan/core.h>
+#include <engine/rendering/vulkan/fileutils.h>
+#include <engine/rendering/vulkan/Shader.h>
+#include <engine/rendering/vulkan/pipeline.h>
+#include <engine/rendering/vulkan/vertexinputdeclaration.h>
+#include <engine/rendering/vulkan/FramebufferStorage.h>
 
 #include <Windows.h>
 
