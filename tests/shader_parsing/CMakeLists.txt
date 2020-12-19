@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.19)
 file(GLOB_RECURSE TESTS_SOURCES "${CMAKE_SOURCE_DIR}/tests/*.cpp" "${CMAKE_SOURCE_DIR}/tests/*.cc" "${CMAKE_SOURCE_DIR}/tests/*.h")
 
 add_executable(TESTS_EXE ${TESTS_SOURCES})
-target_link_libraries(TESTS_EXE Catch2::Catch2 RENDERING_LIB)
+target_link_libraries(TESTS_EXE Catch2::Catch2 ENGINE_LIB)
 
 set_target_properties(TESTS_EXE PROPERTIES 
                         CXX_STANDARD 17

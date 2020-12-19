@@ -1,5 +1,5 @@
 #include <Catch2/catch_all.hpp>
-#include <engine/rendering/vulkan/shaderparsing.h>
+#include <engine/rendering/vulkan/shader_parsing.h>
 #include <engine/rendering/vulkan/fileutils.h>
 
 SCENARIO("All Uniform types are recognized", "[SpirvParser]") {
