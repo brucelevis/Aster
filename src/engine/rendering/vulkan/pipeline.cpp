@@ -1,5 +1,5 @@
 #include "pipeline.h"
-#include "vertexinputdeclaration.h"
+#include "vertex_input_declaration.h"
 
 Pipeline::Pipeline(vk::Device logicalDevice,
   const ShaderProgram& program,

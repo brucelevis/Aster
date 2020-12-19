@@ -1,10 +1,10 @@
 #pragma once
 
 #include "framegraph.h"
-#include "FramebufferStorage.h"
-#include "pipelinestorage.h"
-#include "renderpassstorage.h"
-#include "uniformsaccessorstorage.h"
+#include "framebuffer_storage.h"
+#include "pipeline_storage.h"
+#include "renderpass_storage.h"
+#include "uniforms_accessor_storage.h"
 
 #include "swapchain.h"
 #include "Shader.h"

@@ -2,7 +2,7 @@
 
 #include "Shader.h"
 #include "pipeline.h"
-#include "vertexinputdeclaration.h"
+#include "vertex_input_declaration.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>

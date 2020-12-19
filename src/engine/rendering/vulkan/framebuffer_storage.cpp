@@ -1,4 +1,4 @@
-#include "FramebufferStorage.h"
+#include "framebuffer_storage.h"
 
 bool FramebufferKey::operator< (const FramebufferKey& r) const
 {

@@ -1,4 +1,4 @@
-#include "uniformsaccessor.h"
+#include "uniforms_accessor.h"
 #include "core.h"
 
 UniformsAccessor::UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "uniformsaccessor.h"
+#include "uniforms_accessor.h"
 
 #include <vulkan/vulkan.hpp>
 #include <map>

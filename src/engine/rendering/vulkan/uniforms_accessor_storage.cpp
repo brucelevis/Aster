@@ -1,6 +1,6 @@
-#include "uniformsaccessorstorage.h"
+#include "uniforms_accessor_storage.h"
 #include "core.h"
-#include "Shader.h"
+#include "shader.h"
 
 UniformsAccessorStorage::UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool)
   : core(core)

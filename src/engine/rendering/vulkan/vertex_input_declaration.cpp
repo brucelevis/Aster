@@ -1,4 +1,4 @@
-#include "vertexinputdeclaration.h"
+#include "vertex_input_declaration.h"
 
 namespace vk
 {

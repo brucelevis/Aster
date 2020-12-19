@@ -18,7 +18,7 @@ set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}")
 
 file(GLOB_RECURSE SPIRV_SOURCES "${SPIRV_DEP_DIR}/*.cpp" "${SPIRV_DEP_DIR}/*.cc")
-file(GLOB_RECURSE RENDERING_SOURCES "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.cpp" "${CMAKE_SOURCE_DIR}/src/rendering/*.h" "${CMAKE_SOURCE_DIR}/src/rendering/*.hpp")
+file(GLOB_RECURSE RENDERING_SOURCES "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.cpp" "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.h" "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.hpp")
 file(GLOB_RECURSE COMPILED_SHADERS "${CMAKE_SOURCE_DIR}/shaders/*spv")
 
 include_directories(
@@ -52,7 +52,7 @@ set_target_properties(ASTER_EXE PROPERTIES
                         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/Debug")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/Catch2")
-add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shaderparsing")
+add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shader_parsing")
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/ecs")
 
 target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} RENDERING_LIB ECS_LIB) 
