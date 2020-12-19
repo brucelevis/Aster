@@ -18,7 +18,7 @@ set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}")
 
 file(GLOB_RECURSE SPIRV_SOURCES "${SPIRV_DEP_DIR}/*.cpp" "${SPIRV_DEP_DIR}/*.cc")
-file(GLOB_RECURSE RENDERING_SOURCES "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.cpp" "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.h" "${CMAKE_SOURCE_DIR}/src/engine/rendering/*.hpp")
+file(GLOB_RECURSE ENGINE_SOURCES "${CMAKE_SOURCE_DIR}/src/engine/*.cpp" "${CMAKE_SOURCE_DIR}/src/engine/*.h" "${CMAKE_SOURCE_DIR}/src/engine/*.hpp")
 file(GLOB_RECURSE COMPILED_SHADERS "${CMAKE_SOURCE_DIR}/shaders/*spv")
 
 include_directories(
@@ -34,13 +34,13 @@ set_target_properties(SPIRV_LIB PROPERTIES
                         CXX_STANDARD_REQUIRED YES
                         CXX_EXTENSIONS NO)
 
-add_library(RENDERING_LIB ${RENDERING_SOURCES})
-set_target_properties(RENDERING_LIB PROPERTIES 
+add_library(ENGINE_LIB ${ENGINE_SOURCES})
+set_target_properties(ENGINE_LIB PROPERTIES 
                         CXX_STANDARD 17
                         CXX_STANDARD_REQUIRED YES
                         CXX_EXTENSIONS NO)
 
-target_link_libraries(RENDERING_LIB SPIRV_LIB)
+target_link_libraries(ENGINE_LIB SPIRV_LIB)
 
 
 add_executable(ASTER_EXE "${CMAKE_SOURCE_DIR}/src/main.cpp")
@@ -55,4 +55,4 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/Catch2")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shader_parsing")
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/ecs")
 
-target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} RENDERING_LIB ECS_LIB) 
+target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} ENGINE_LIB ECS_LIB) 
