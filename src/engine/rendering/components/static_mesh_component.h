@@ -12,6 +12,7 @@ struct StaticMesh
 {
   Buffer vertices;
   Buffer indices;
+  unsigned int indexCount;
 };
 
 struct StaticMeshComponent : public BaseComponent
