@@ -12,46 +12,56 @@ public:
   UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
 
   template<class T>
-  T* GetUniformBuffer(const UniformName& name)
+  void SetUniformBuffer(const UniformName& name, const T* data)
   {
     const UniformSetPair setBinding = uniforms.GetSetBindingPair(name);
     const UniformBindingDescription& bindingDescription = uniforms.GetBindingDescription(setBinding.set, setBinding.binding);
-    
+
     if (bindingDescription.type != UniformType::UniformBuffer)
       throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform is not UBO type.");
 
     if (sizeof(T) != bindingDescription.size)
       throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
 
-    const auto it = ownedBuffers.find(name);
-    if (it != ownedBuffers.end())
-      return reinterpret_cast<T*>(it->second.GetMappedMemory());
+    Buffer buf = core.AllocateBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
+    buf.UploadMemory(data, sizeof(T), 0);
+    const vk::DescriptorBufferInfo& dscBufInfo = buf.GetFullBufferUpdateInfo();
+    ownedBuffers.push_back(std::move(buf));
 
-    Buffer tmpBuf = core.AllocateBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
-    ownedBuffers.insert({ name, std::move(tmpBuf) });
-    const Buffer& buf = ownedBuffers.at(name);
+    const bool isUboForThisBindingAlreadySet = writes.find(setBinding) != writes.end();
+    vk::DescriptorSet& dscSet = currentDescriptorSets[setBinding.set];
 
-    vk::DescriptorSet descriptorSet = ownedDescriptorSets.at(setBinding.set).get();
+    if (dscSet == vk::DescriptorSet{} || isUboForThisBindingAlreadySet)
+    {
+      const auto allocInfo = vk::DescriptorSetAllocateInfo()
+        .setDescriptorPool(descriptorPool)
+        .setDescriptorSetCount(1)
+        .setPSetLayouts(&layouts[setBinding.set]);
+
+      dscSet = core.GetLogicalDevice().allocateDescriptorSets(allocInfo)[0];
+      ownedDescriptorSets.push_back(dscSet);
+    }
 
     writes[setBinding] = vk::WriteDescriptorSet()
       .setDescriptorCount(1)
       .setDescriptorType(vk::DescriptorType::eUniformBuffer)
       .setDstArrayElement(0)
       .setDstBinding(setBinding.binding)
-      .setDstSet(descriptorSet)
+      .setDstSet(dscSet)
       .setPBufferInfo(&buf.GetFullBufferUpdateInfo());
-
-    return reinterpret_cast<T*>(ownedBuffers.at(name).Map());
   }
-  
+
   std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
 
 private:
   Core& core;
+  vk::DescriptorPool descriptorPool;
   const std::vector<vk::DescriptorSetLayout>& layouts;
   PipelineUniforms uniforms;
 
-  std::vector<vk::UniqueDescriptorSet> ownedDescriptorSets;
-  std::map<UniformName, Buffer> ownedBuffers;
+  std::vector<vk::DescriptorSet> currentDescriptorSets;
+  std::vector<vk::DescriptorSet> ownedDescriptorSets;
+  std::vector<Buffer> ownedBuffers;
+
   std::map<UniformSetPair, vk::WriteDescriptorSet> writes;
 };

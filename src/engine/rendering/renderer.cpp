@@ -57,8 +57,10 @@ void RenderSystem::Update(const double dt)
             const glm::mat4 view = camera->GetView();
             const glm::mat4 projection = camera->GetProjection();
 
-            PerStaticMeshResource* mvpResource = uniforms->GetUniformBuffer<PerStaticMeshResource>("PerStaticMeshResource");
-            mvpResource->mvp = projection * view * model;
+            PerStaticMeshResource mvpResource;
+            mvpResource.mvp = projection * view * model;
+
+            uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
             std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
 
             context.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, p->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);

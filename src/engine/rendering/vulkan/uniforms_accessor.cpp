@@ -3,28 +3,15 @@
 
 UniformsAccessor::UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms)
   : core(core)
+  , descriptorPool(descriptorPool)
   , layouts(layouts)
   , uniforms(uniforms)
 {
-  const auto allocInfo = vk::DescriptorSetAllocateInfo()
-    .setDescriptorPool(descriptorPool)
-    .setDescriptorSetCount(layouts.size())
-    .setPSetLayouts(layouts.data());
-
-  ownedDescriptorSets = core.GetLogicalDevice().allocateDescriptorSetsUnique(allocInfo);
+  ownedDescriptorSets.resize(layouts.size());
 }
 
 std::vector<vk::DescriptorSet> UniformsAccessor::GetUpdatedDescriptorSets()
 {
-  for (auto& [_, buf] : ownedBuffers)
-    buf.Unmap();
-
-  std::vector<vk::DescriptorSet> descriptorSets;
-  descriptorSets.reserve(ownedDescriptorSets.size());
-
-  for (const vk::UniqueDescriptorSet& s : ownedDescriptorSets)
-    descriptorSets.push_back(s.get());
-
   std::vector<vk::WriteDescriptorSet> writesInfo;
   writesInfo.reserve(writes.size());
 
@@ -33,5 +20,5 @@ std::vector<vk::DescriptorSet> UniformsAccessor::GetUpdatedDescriptorSets()
 
   core.GetLogicalDevice().updateDescriptorSets(writesInfo.size(), writesInfo.data(), 0, nullptr);
 
-  return descriptorSets;
+  return currentDescriptorSets;
 }
