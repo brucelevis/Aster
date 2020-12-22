@@ -38,8 +38,10 @@ public:
         .setDescriptorSetCount(1)
         .setPSetLayouts(&layouts[setBinding.set]);
 
-      dscSet = core.GetLogicalDevice().allocateDescriptorSets(allocInfo)[0];
-      ownedDescriptorSets.push_back(dscSet);
+      vk::UniqueDescriptorSet s = std::move(core.GetLogicalDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
+      dscSet = s.get();
+
+      ownedDescriptorSets.push_back(std::move(s));
     }
 
     writes[setBinding] = vk::WriteDescriptorSet()
@@ -60,7 +62,7 @@ private:
   PipelineUniforms uniforms;
 
   std::vector<vk::DescriptorSet> currentDescriptorSets;
-  std::vector<vk::DescriptorSet> ownedDescriptorSets;
+  std::vector<vk::UniqueDescriptorSet> ownedDescriptorSets;
   std::vector<Buffer> ownedBuffers;
 
   std::map<UniformSetPair, vk::WriteDescriptorSet> writes;
