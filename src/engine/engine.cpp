@@ -21,6 +21,7 @@ Engine::Engine()
 
   vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ 800, 600 });
 
+  ecsContext.SetUserData(this);
   ecsContext.AddLogicSystems({
     new RenderSystem{&ecsContext,*vkCore}
   });
