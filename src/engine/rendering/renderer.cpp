@@ -13,9 +13,9 @@ namespace
   };
 }
 
-RenderSystem::RenderSystem(Context* ctx, GLFWwindow* wnd, vk::Extent2D wndSize, const char** extensions, size_t extensionsCount)
+RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
   : LogicSystem(ctx)
-  , vkCore(wnd, extensions, extensionsCount, wndSize )
+  , vkCore(vkCore)
 {
   Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
   Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));

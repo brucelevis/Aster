@@ -8,6 +8,7 @@
 #include <memory>
 
 class Context;
+class Core;
 struct GLFWwindow;
 
 struct StaticMeshVertex
@@ -29,12 +30,12 @@ struct StaticMeshVertex
 class RenderSystem : public LogicSystem
 {
 public:
-  RenderSystem(Context* ctx, GLFWwindow* wnd, vk::Extent2D wndSize, const char** extensions, size_t extensionsCount);
+  RenderSystem(Context* ctx, Core& vkCore);
 
   virtual void Update(const double dt) override;
 
 private:
-  Core vkCore;
+  Core& vkCore;
 
   std::unique_ptr<ShaderProgram> static_mesh_shader_program;
 };

@@ -19,8 +19,10 @@ Engine::Engine()
   uint32_t count;
   const char** extensions = glfwGetRequiredInstanceExtensions(&count);
 
+  vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ 800, 600 });
+
   ecsContext.AddLogicSystems({
-    new RenderSystem{&ecsContext,wnd, vk::Extent2D{800, 600}, extensions, count}
+    new RenderSystem{&ecsContext,*vkCore}
   });
 }
 
