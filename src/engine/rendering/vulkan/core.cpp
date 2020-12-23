@@ -269,7 +269,7 @@ HostBuffer Core::AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags us
   return HostBuffer{ logicalDevice.get(), std::move(hostBuffer), std::move(bufferMemory), memSize };
 }
 
-Buffer Core::AllocateDeviceBuffer(void* src, vk::DeviceSize size, vk::BufferUsageFlags usage)
+Buffer Core::AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::BufferUsageFlags usage)
 {
   HostBuffer hostBuffer = AllocateHostBuffer(size, usage | vk::BufferUsageFlagBits::eTransferSrc);
   hostBuffer.UploadMemory(src, size, 0);

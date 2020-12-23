@@ -56,7 +56,7 @@ public:
 
   HostBuffer AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
 
-  Buffer AllocateDeviceBuffer(void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
+  Buffer AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
 
   Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask);
 
