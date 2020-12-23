@@ -1,5 +1,6 @@
 #include "engine.h"
 
+#include <engine/assets/asset_storage.h>
 #include <engine/rendering/renderer.h>
 
 #define GLFW_INCLUDE_NONE
@@ -20,6 +21,7 @@ Engine::Engine()
   const char** extensions = glfwGetRequiredInstanceExtensions(&count);
 
   vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ 800, 600 });
+  assetStorage = std::make_unique<AssetStorage>(*vkCore);
 
   ecsContext.SetUserData(this);
   ecsContext.AddLogicSystems({

@@ -5,6 +5,7 @@
 #include <memory>
 
 class Core;
+class AssetStorage;
 struct GLFWwindow;
 
 class Engine
@@ -21,4 +22,5 @@ private:
   Context ecsContext;
   GLFWwindow* wnd;
   std::unique_ptr<Core> vkCore;
+  std::unique_ptr<AssetStorage> assetStorage;
 };

@@ -1,12 +1,13 @@
 #pragma once
 
+#include <engine/rendering/components/static_mesh_component.h>
+
 #include <unordered_map>
 #include <string>
 
 #define CUBE_STATIC_MESH std::string("__cube_mesh")
 
 class Core;
-struct StaticMesh;
 
 class AssetStorage
 {
