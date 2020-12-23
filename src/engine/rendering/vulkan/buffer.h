@@ -9,6 +9,30 @@ class Buffer
 public:
   Buffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDeviceMemory&& memory, vk::DeviceSize memorySize);
 
+  inline vk::Buffer GetBuffer() const 
+  {
+    return buffer.get();
+  }
+
+  inline const vk::DescriptorBufferInfo& GetFullBufferUpdateInfo() const
+  {
+    return fullBufferUpdateInfo;
+  }
+
+protected:
+  vk::Device logicalDevice;
+  vk::UniqueBuffer buffer;
+  vk::UniqueDeviceMemory memory;
+  vk::DeviceSize memorySize;
+
+  vk::DescriptorBufferInfo fullBufferUpdateInfo;
+};
+
+class HostBuffer : public Buffer
+{
+public:
+  HostBuffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDeviceMemory&& memory, vk::DeviceSize memorySize);
+
   inline void* Map()
   {
     mappedMemory = logicalDevice.mapMemory(memory.get(), 0, memorySize);
@@ -28,23 +52,6 @@ public:
     return mappedMemory;
   }
 
-  inline vk::Buffer GetBuffer() const 
-  {
-    return buffer.get();
-  }
-
-  inline const vk::DescriptorBufferInfo& GetFullBufferUpdateInfo() const
-  {
-    return fullBufferUpdateInfo;
-  }
-
-protected:
-  vk::Device logicalDevice;
-  vk::UniqueBuffer buffer;
-  vk::UniqueDeviceMemory memory;
+private:
   void* mappedMemory;
-  vk::DeviceSize memorySize;
-
-  vk::DescriptorBufferInfo fullBufferUpdateInfo;
 };
-

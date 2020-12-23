@@ -46,6 +46,7 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
 
     graphicsFamilyIndex = uint32_t(-1);
     presentFamilyIndex = uint32_t(-1);
+    transferFamilyIndex = uint32_t(-1);
     for (uint32_t familyIndex = 0; familyIndex < queueFamilies.size(); familyIndex++)
     {
       if (queueFamilies[familyIndex].queueFlags & vk::QueueFlagBits::eGraphics && queueFamilies[familyIndex].queueCount > 0 && graphicsFamilyIndex == uint32_t(-1))
@@ -53,15 +54,18 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
 
       if (physicalDevice.getSurfaceSupportKHR(familyIndex, surface.get()) && queueFamilies[familyIndex].queueCount > 0 && presentFamilyIndex == uint32_t(-1))
         presentFamilyIndex = familyIndex;
+
+      if (queueFamilies[familyIndex].queueFlags & vk::QueueFlagBits::eTransfer && queueFamilies[familyIndex].queueCount > 0 && transferFamilyIndex == uint32_t(-1))
+        transferFamilyIndex;
     }
-    if (graphicsFamilyIndex == uint32_t(-1) || presentFamilyIndex == uint32_t(-1))
+    if (graphicsFamilyIndex == uint32_t(-1) || presentFamilyIndex == uint32_t(-1) || transferFamilyIndex == uint32_t(-1))
       throw std::runtime_error("Failed to find appropriate queue families");
 
   }
 
   //create logical device
   {
-    std::set<uint32_t> uniqueQueueFamilyIndices = { graphicsFamilyIndex, presentFamilyIndex };
+    std::set<uint32_t> uniqueQueueFamilyIndices = { graphicsFamilyIndex, presentFamilyIndex, transferFamilyIndex };
 
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
     float queuePriority = 1.0f;
@@ -96,6 +100,7 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
   //get queues
   this->graphicsQueue = logicalDevice->getQueue(graphicsFamilyIndex, 0);
   this->presentQueue = logicalDevice->getQueue(presentFamilyIndex, 0);
+  this->transferQueue = logicalDevice->getQueue(transferFamilyIndex, 0);
 
   //get memory types index
   hostVisibleMemoryIndex = -1;
@@ -257,7 +262,49 @@ void Core::EndFrame()
   swapchain->PresentImage(fr.renderingFinished.get());
 }
 
-Buffer Core::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage)
+HostBuffer Core::AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage)
+{
+  auto [hostBuffer, bufferMemory, memSize] = AllocateBuffer(size, usage, graphicsFamilyIndex, hostVisibleMemoryIndex);
+
+  return HostBuffer{ logicalDevice.get(), std::move(hostBuffer), std::move(bufferMemory), memSize };
+}
+
+Buffer Core::AllocateDeviceBuffer(void* src, vk::DeviceSize size, vk::BufferUsageFlags usage)
+{
+  HostBuffer hostBuffer = AllocateHostBuffer(size, usage | vk::BufferUsageFlagBits::eTransferSrc);
+  hostBuffer.UploadMemory(src, size, 0);
+
+  auto [deviceBuffer, deviceBufferMemory, deviceBufferMemSize] = AllocateBuffer(size, usage | vk::BufferUsageFlagBits::eTransferDst, transferFamilyIndex, deviceLocalMemoryIndex);
+
+  const auto cmdBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+    .setCommandPool(cmdPool.get())
+    .setCommandBufferCount(1)
+    .setLevel(vk::CommandBufferLevel::ePrimary);
+
+  vk::UniqueCommandBuffer cmdBuffer = std::move(logicalDevice->allocateCommandBuffersUnique(cmdBufferAllocateInfo)[0]);
+  cmdBuffer->begin(vk::CommandBufferBeginInfo());
+
+  const auto copyRegion = vk::BufferCopy()
+    .setSize(deviceBufferMemSize)
+    .setSrcOffset(0)
+    .setDstOffset(0);
+
+  cmdBuffer->copyBuffer(hostBuffer.GetBuffer(), deviceBuffer.get(), 1, &copyRegion);
+
+  vk::UniqueFence bufferCopiedFence = logicalDevice->createFenceUnique(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
+  const auto submitInfo = vk::SubmitInfo()
+    .setCommandBufferCount(1)
+    .setPCommandBuffers(&cmdBuffer.get());
+
+  transferQueue.submit(1, &submitInfo, bufferCopiedFence.get());
+
+  const bool waitAll = true;
+  logicalDevice->waitForFences(1, &bufferCopiedFence.get(), waitAll, uint64_t(-1));
+
+  return Buffer{ logicalDevice.get(), std::move(deviceBuffer), std::move(deviceBufferMemory), deviceBufferMemSize };
+}
+
+std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> Core::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex)
 {
   const auto bufferCreateInfo = vk::BufferCreateInfo()
     //.setFlags()
@@ -265,7 +312,7 @@ Buffer Core::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage)
     .setUsage(usage)
     .setSharingMode(vk::SharingMode::eExclusive)
     .setQueueFamilyIndexCount(1)
-    .setPQueueFamilyIndices(&graphicsFamilyIndex);
+    .setPQueueFamilyIndices(&queueFamilyIndex);
 
   vk::UniqueBuffer buf = logicalDevice->createBufferUnique(bufferCreateInfo);
 
@@ -273,13 +320,13 @@ Buffer Core::AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage)
 
   const auto memAllocateInfo = vk::MemoryAllocateInfo()
     .setAllocationSize(memRec.size)
-    .setMemoryTypeIndex(hostVisibleMemoryIndex);
+    .setMemoryTypeIndex(memoryTypeIndex);
 
   vk::UniqueDeviceMemory memory = logicalDevice->allocateMemoryUnique(memAllocateInfo);
 
   logicalDevice->bindBufferMemory(buf.get(), memory.get(), 0);
 
-  return Buffer{ logicalDevice.get(), std::move(buf), std::move(memory), size };
+  return { std::move(buf), std::move(memory), memRec.size };
 }
 
 Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask)

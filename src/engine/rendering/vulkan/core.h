@@ -54,7 +54,9 @@ public:
 
   void EndFrame();
 
-  Buffer AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
+  HostBuffer AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
+
+  Buffer AllocateDeviceBuffer(void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
 
   Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask);
 
@@ -67,14 +69,19 @@ public:
   vk::Device GetLogicalDevice() const;
 
 private:
+  std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex);
+
+private:
   vk::UniqueInstance instance;
   vk::PhysicalDevice physicalDevice;
   vk::UniqueSurfaceKHR surface;
   uint32_t graphicsFamilyIndex;
   uint32_t presentFamilyIndex;
+  uint32_t transferFamilyIndex;
   vk::UniqueDevice logicalDevice;
   vk::Queue graphicsQueue;
   vk::Queue presentQueue;
+  vk::Queue transferQueue;
   vk::UniqueCommandPool cmdPool;
   std::unique_ptr<Swapchain> swapchain;
   vk::UniqueDescriptorPool descriptorPool;

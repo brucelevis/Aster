@@ -4,7 +4,6 @@ Buffer::Buffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDe
   : logicalDevice(logicalDevice)
   , buffer(std::move(buffer))
   , memory(std::move(memory))
-  , mappedMemory(nullptr)
   , memorySize(memorySize)
 {
   fullBufferUpdateInfo = vk::DescriptorBufferInfo()
@@ -13,8 +12,13 @@ Buffer::Buffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDe
     .setRange(VK_WHOLE_SIZE);
 }
 
+HostBuffer::HostBuffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDeviceMemory&& memory, vk::DeviceSize memorySize)
+  : Buffer(logicalDevice, std::move(buffer), std::move(memory), memorySize)
+  , mappedMemory(nullptr)
+{
+}
 
-void Buffer::UploadMemory(const void* src, vk::DeviceSize size, vk::DeviceSize offset)
+void HostBuffer::UploadMemory(const void* src, vk::DeviceSize size, vk::DeviceSize offset)
 {
   mappedMemory = logicalDevice.mapMemory(memory.get(), offset, size);
 

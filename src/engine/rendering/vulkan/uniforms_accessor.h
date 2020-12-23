@@ -23,7 +23,7 @@ public:
     if (sizeof(T) != bindingDescription.size)
       throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
 
-    Buffer buf = core.AllocateBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
+    HostBuffer buf = core.AllocateHostBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
     buf.UploadMemory(data, sizeof(T), 0);
     const vk::DescriptorBufferInfo& dscBufInfo = buf.GetFullBufferUpdateInfo();
     ownedBuffers.push_back(std::move(buf));
