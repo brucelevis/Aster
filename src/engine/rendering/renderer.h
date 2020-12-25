@@ -8,6 +8,7 @@
 #include <memory>
 
 class Context;
+class Group;
 class Core;
 struct GLFWwindow;
 
@@ -20,6 +21,9 @@ public:
 
 private:
   Core& vkCore;
+
+  Group* cameraGroup;
+  Group* staticMeshGroup;
 
   std::unique_ptr<ShaderProgram> static_mesh_shader_program;
 };

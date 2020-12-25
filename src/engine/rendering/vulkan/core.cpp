@@ -58,9 +58,11 @@ Core::Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanc
       if (queueFamilies[familyIndex].queueFlags & vk::QueueFlagBits::eTransfer && queueFamilies[familyIndex].queueCount > 0 && transferFamilyIndex == uint32_t(-1))
         transferFamilyIndex;
     }
-    if (graphicsFamilyIndex == uint32_t(-1) || presentFamilyIndex == uint32_t(-1) || transferFamilyIndex == uint32_t(-1))
+    if (graphicsFamilyIndex == uint32_t(-1) || presentFamilyIndex == uint32_t(-1))
       throw std::runtime_error("Failed to find appropriate queue families");
 
+    if (transferFamilyIndex == uint32_t(-1))
+      transferFamilyIndex = graphicsFamilyIndex;
   }
 
   //create logical device
@@ -285,13 +287,14 @@ Buffer Core::AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::Buff
   cmdBuffer->begin(vk::CommandBufferBeginInfo());
 
   const auto copyRegion = vk::BufferCopy()
-    .setSize(deviceBufferMemSize)
+    .setSize(size)
     .setSrcOffset(0)
     .setDstOffset(0);
 
   cmdBuffer->copyBuffer(hostBuffer.GetBuffer(), deviceBuffer.get(), 1, &copyRegion);
+  cmdBuffer->end();
 
-  vk::UniqueFence bufferCopiedFence = logicalDevice->createFenceUnique(vk::FenceCreateInfo().setFlags(vk::FenceCreateFlagBits::eSignaled));
+  vk::UniqueFence bufferCopiedFence = logicalDevice->createFenceUnique(vk::FenceCreateInfo());
   const auto submitInfo = vk::SubmitInfo()
     .setCommandBufferCount(1)
     .setPCommandBuffers(&cmdBuffer.get());

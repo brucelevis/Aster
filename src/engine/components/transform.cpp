@@ -59,21 +59,58 @@ glm::vec3 Transform::GetWorldScale() const
 
 glm::mat4 Transform::GetTransformationMatrix() const
 {
-  const glm::vec3 worldScale = GetWorldScale();
-  glm::mat4 mat = GetTransformationMatrixWithoutScale();
-  mat = glm::scale(mat, worldScale);
+  glm::mat4 mat(1);
+
+  const Transform* parent = this;
+  while (parent != nullptr)
+  {
+    glm::mat4 parentMat(1);
+    parentMat = glm::translate(parentMat, parent->LocalPosition);
+    parentMat = parentMat * glm::mat4_cast(parent->LocalRotation);
+    parentMat = glm::scale(parentMat, parent->LocalScale);
+
+    mat = parentMat* mat;
+
+    parent = parent->Parent;
+  }
 
   return mat;
 }
 
 glm::mat4 Transform::GetTransformationMatrixWithoutScale() const
 {
-  const glm::vec3 worldPosition = GetWorldPosition();
-  const glm::quat worldRotation = GetWorldRotation();
+  glm::mat4 mat(1);
 
-  glm::mat4 mat(1.0f);
-  mat = glm::translate(mat, worldPosition);
-  mat = glm::mat4_cast(worldRotation) * mat;
+  const Transform* parent = this;
+  while (parent != nullptr)
+  {
+    glm::mat4 parentMat(1);
+    parentMat = glm::translate(parentMat, parent->LocalPosition);
+    parentMat = parentMat * glm::mat4_cast(parent->LocalRotation);
+
+    mat = parentMat * mat;
+
+    parent = parent->Parent;
+  }
+
+  return mat;
+}
+
+glm::mat4 Transform::GetCameraTransformationMatrixWithoutScale() const
+{
+  glm::mat4 mat(1);
+
+  const Transform* parent = this;
+  while (parent != nullptr)
+  {
+    glm::mat4 parentMat(1);
+    parentMat = glm::translate(parentMat, -parent->LocalPosition);
+    parentMat = parentMat * glm::mat4_cast(glm::inverse(parent->LocalRotation));
+
+    mat = parentMat * mat;
+
+    parent = parent->Parent;
+  }
 
   return mat;
 }

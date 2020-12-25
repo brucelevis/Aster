@@ -25,7 +25,6 @@ public:
 
     HostBuffer buf = core.AllocateHostBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
     buf.UploadMemory(data, sizeof(T), 0);
-    const vk::DescriptorBufferInfo& dscBufInfo = buf.GetFullBufferUpdateInfo();
     ownedBuffers.push_back(std::move(buf));
 
     const bool isUboForThisBindingAlreadySet = writes.find(setBinding) != writes.end();
@@ -50,7 +49,7 @@ public:
       .setDstArrayElement(0)
       .setDstBinding(setBinding.binding)
       .setDstSet(dscSet)
-      .setPBufferInfo(&buf.GetFullBufferUpdateInfo());
+      .setPBufferInfo(&ownedBuffers.back().GetFullBufferUpdateInfo());
   }
 
   std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
@@ -58,7 +57,7 @@ public:
 private:
   Core& core;
   vk::DescriptorPool descriptorPool;
-  const std::vector<vk::DescriptorSetLayout>& layouts;
+  std::vector<vk::DescriptorSetLayout> layouts;
   PipelineUniforms uniforms;
 
   std::vector<vk::DescriptorSet> currentDescriptorSets;

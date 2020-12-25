@@ -16,6 +16,16 @@ public:
 
   void Start();
 
+  inline AssetStorage* GetAssetStorage() const
+  {
+    return assetStorage.get();
+  }
+
+  inline void AddSystems(std::function<void(Context&)> addSystems)
+  {
+    addSystems(ecsContext);
+  }
+
 private:
 
 private:

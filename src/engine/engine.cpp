@@ -37,10 +37,13 @@ Engine::~Engine()
 
 void Engine::Start()
 {
+  ecsContext.RunInitializationSystems();
+
   clock_t t1 = clock();
   while (!glfwWindowShouldClose(wnd)) {
-    clock_t t2 = clock();
-    float dt = static_cast<float>(t2 - t1) / static_cast<float>(CLOCKS_PER_SEC);
+    const clock_t t2 = clock();
+    const float dt = static_cast<float>(t2 - t1) / static_cast<float>(CLOCKS_PER_SEC);
+    t1 = t2;
 
     glfwPollEvents();
     ecsContext.UpdateSystems(dt);

@@ -7,7 +7,7 @@ UniformsAccessor::UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool
   , layouts(layouts)
   , uniforms(uniforms)
 {
-  ownedDescriptorSets.resize(layouts.size());
+  currentDescriptorSets.resize(layouts.size());
 }
 
 std::vector<vk::DescriptorSet> UniformsAccessor::GetUpdatedDescriptorSets()

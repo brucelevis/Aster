@@ -17,6 +17,9 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
   : LogicSystem(ctx)
   , vkCore(vkCore)
 {
+  cameraGroup = ctx->GetGroup<CameraComponent>();
+  staticMeshGroup = ctx->GetGroup<StaticMeshComponent>();
+
   Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
   Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));
   static_mesh_shader_program = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
@@ -24,7 +27,7 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
 
 void RenderSystem::Update(const double dt)
 {
-  Entity* cameraEntity = pContext->GetGroup<CameraComponent>()->GetFirstNotNullEntity();
+  Entity* cameraEntity = cameraGroup->GetFirstNotNullEntity();
   CameraComponent* camera = cameraEntity->GetFirstComponent<CameraComponent>();
 
   if (camera == nullptr)
@@ -33,20 +36,21 @@ void RenderSystem::Update(const double dt)
   RenderGraph* rg = vkCore.BeginFrame();
   rg->AddRenderSubpass()
     .AddOutputColorAttachment(OutputColorAttachmentDescription{ BACKBUFFER_RESOURCE_ID })
+    .AddDepthStencilAttachment({"depth"})
     .SetRenderCallback([&](FrameContext& context)
      {
         VertexInputDeclaration vid = StaticMeshVertex::GetVID();
 
         const auto depthStencil = DepthStencilSettings()
-          .SetDepthTestEnabled(false)
-          .SetDepthWriteEnabled(false);
+          .SetDepthTestEnabled(true)
+          .SetDepthWriteEnabled(true);
 
         Pipeline* p = context.pipelineStorage->GetPipeline(*static_mesh_shader_program, vid, vk::PrimitiveTopology::eTriangleList, depthStencil, context);
         context.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, p->GetPipeline());
 
         UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*static_mesh_shader_program);
 
-        for (Entity* e : pContext->GetGroup<StaticMeshComponent>()->GetEntities())
+        for (Entity* e : staticMeshGroup->GetEntities())
         {
           if (e == nullptr)
             continue;
@@ -67,7 +71,7 @@ void RenderSystem::Update(const double dt)
             vk::DeviceSize offset = 0;
             context.commandBuffer.bindVertexBuffers(0, 1, &meshComponent->mesh->vertices.GetBuffer(), &offset);
             context.commandBuffer.bindIndexBuffer(meshComponent->mesh->indices.GetBuffer(), 0, vk::IndexType::eUint32);
-            //context.commandBuffer.drawIndexed()
+            context.commandBuffer.drawIndexed(meshComponent->mesh->indexCount, 1, 0, 0, 0);
           }
         }
      });

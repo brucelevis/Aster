@@ -19,12 +19,9 @@ UniformsAccessor* UniformsAccessorStorage::GetUniformsAccessor(const ShaderProgr
     return it->second.get();
   }
 
-  auto uContext = std::make_unique<UniformsAccessor>(core, descriptorPool, layouts, uniforms);
-  UniformsAccessor* context = uContext.get();
+  contexts[uniforms] = std::make_unique<UniformsAccessor>(core, descriptorPool, layouts, uniforms);
 
-  contexts[uniforms] = std::move(uContext);
-
-  return context;
+  return contexts.at(uniforms).get();
 }
 
 void UniformsAccessorStorage::Reset()

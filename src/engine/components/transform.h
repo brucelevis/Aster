@@ -28,6 +28,7 @@ struct Transform
 
   glm::mat4 GetTransformationMatrix() const;
   glm::mat4 GetTransformationMatrixWithoutScale() const;
+  glm::mat4 GetCameraTransformationMatrixWithoutScale() const;
 
   glm::vec3 GetOrientationVector(OrientationVectorType type) const;
   
