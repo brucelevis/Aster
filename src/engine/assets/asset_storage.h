@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/rendering/components/static_mesh_component.h>
+#include <engine/components/static_mesh_component.h>
 
 #include <unordered_map>
 #include <string>

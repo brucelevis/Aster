@@ -1,7 +1,8 @@
 #include "renderer.h"
-#include "vulkan/fileutils.h"
-#include "components/camera_component.h"
-#include "components/static_mesh_component.h"
+
+#include <engine/components/camera_component.h>
+#include <engine/components/static_mesh_component.h>
+#include <engine/rendering/vulkan/fileutils.h>
 
 #include <ecs/Context.h>
 

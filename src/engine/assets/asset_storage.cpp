@@ -1,6 +1,6 @@
 #include "asset_storage.h"
+#include <engine/components/static_mesh_component.h>
 #include <engine/rendering/vulkan/core.h>
-#include <engine/rendering/components/static_mesh_component.h>
 
 #include <array>
 
