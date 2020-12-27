@@ -65,7 +65,7 @@ public:
 private:
   void LoadMeshes(const YAML::Node& config)
   {
-    AssetStorage* assetStorage = reinterpret_cast<Engine*>(pContext->GetUserData())->GetAssetStorage();
+    AssetStorage* assetStorage = pContext->GetUserData<Engine*>()->GetAssetStorage();
     const YAML::Node meshes = config["meshes"];
 
     for (int i = 0; i < meshes.size(); ++i)
@@ -81,7 +81,7 @@ private:
   void CreateObjects(const YAML::Node& config)
   {
     EntityManager* em = pContext->GetEntityManager();
-    AssetStorage* as = reinterpret_cast<Engine*>(pContext->GetUserData())->GetAssetStorage();
+    AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
 
     CreateCameraEntity(em);
 
