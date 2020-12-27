@@ -14,8 +14,9 @@ set(GLFW_DEP_DIR "${DEP_DIR}/glfw")
 set(GLM_DEP_DIR "${DEP_DIR}/glm")
 set(SPIRV_DEP_DIR "${DEP_DIR}/spirv_cross")
 set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
+set(YAML_CPP_DEP_DIR "${DEP_DIR}/yaml-cpp")
 
-set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}")
+set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/src"

@@ -1,0 +1,12 @@
+meshes:
+    - name: cube
+      mesh_file: ../data/meshes/cube/cube.obj
+
+objects:
+    - mesh: cube
+      position: [3.0, 1.0, -15.0]
+      scale: [1.0, 1.0, 1.0]
+    
+    - mesh: cube
+      position: [1.0, -4.0, -20.0]
+      scale: [1.0, 1.0, 1.0]

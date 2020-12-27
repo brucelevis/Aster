@@ -6,8 +6,6 @@
 #include <string>
 #include <optional>
 
-#define CUBE_STATIC_MESH std::string("__cube_mesh")
-
 class Core;
 
 class AssetStorage
@@ -25,8 +23,7 @@ public:
     return nullptr;
   }
 
-private:
-  void InitializeBasicMeshes();
+  void LoadModel(const std::string& objFile, const std::string& textureFile, const std::string& modelName);
 
 private:
   Core& vkCore;

@@ -16,9 +16,9 @@ struct Transform
 
   Transform* Parent;
 
-  glm::vec3 LocalPosition;
-  glm::quat LocalRotation;
-  glm::vec3 LocalScale;
+  glm::vec3 LocalPosition = { 0.0f, 0.0f, 0.0f };
+  glm::quat LocalRotation = {1.0f, 0.0f, 0.0f, 0.0f};
+  glm::vec3 LocalScale = { 1.0f, 1.0f, 1.0f };
 
   void AttachTo(Transform* Parent);
 
