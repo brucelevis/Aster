@@ -8,7 +8,8 @@
 enum class UniformType
 {
   None,
-  UniformBuffer
+  UniformBuffer,
+  Sampler2D,
 };
 
 typedef unsigned int ShaderStages;

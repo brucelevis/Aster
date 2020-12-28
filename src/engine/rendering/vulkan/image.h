@@ -27,16 +27,41 @@ public:
     view = logicalDevice.createImageViewUnique(viewCreateInfo);
   }
 
-  Image(vk::UniqueImage img, vk::UniqueImageView view, vk::UniqueDeviceMemory memory)
+  Image(vk::UniqueImage img, vk::UniqueImageView view, vk::UniqueDeviceMemory memory, vk::UniqueSampler sampler)
+    : image(std::move(img))
+    , view(std::move(view))
+    , memory(std::move(memory))
+    , sampler(std::move(sampler))
   {
-    this->image = std::move(img);
-    this->view = std::move(view);
-    this->memory = std::move(memory);
+    descriptorImageInfo
+      .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+      .setImageView(this->view.get())
+      .setSampler(this->sampler.get());
   }
 
-  vk::ImageView GetView() const
+  inline vk::ImageView GetView() const
   {
     return *view;
+  }
+
+  inline vk::Image GetImage() const
+  {
+    return image.get();
+  }
+
+  inline vk::DeviceMemory GetMemory() const
+  {
+    return memory.get();
+  }
+
+  inline vk::Sampler GetSampler() const
+  {
+    return sampler.get();
+  }
+
+  inline const vk::DescriptorImageInfo& GetDescriptorImageInfo() const
+  {
+    return descriptorImageInfo;
   }
 
 private:
@@ -44,4 +69,6 @@ private:
   vk::UniqueImage image;
   vk::UniqueImageView view;
   vk::UniqueDeviceMemory memory;
+  vk::UniqueSampler sampler;
+  vk::DescriptorImageInfo descriptorImageInfo;
 };

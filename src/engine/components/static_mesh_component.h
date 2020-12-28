@@ -3,6 +3,7 @@
 #include <engine/components/transform.h>
 #include <engine/rendering/vulkan/buffer.h>
 #include <engine/rendering/vulkan/vertex.h>
+#include <engine/rendering/vulkan/image.h>
 
 #include <ecs/BaseComponent.h>
 
@@ -14,6 +15,7 @@ struct StaticMesh
   Buffer vertices;
   Buffer indices;
   unsigned int indexCount;
+  Image texture;
 
   typedef StaticMeshVertex Vertex;
 };

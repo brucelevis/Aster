@@ -1,6 +1,7 @@
 meshes:
     - name: cube
       mesh_file: ../data/meshes/cube/cube.obj
+      texture_file: ../data/meshes/cube/cube.jpg
 
 objects:
     - mesh: cube

@@ -9,6 +9,8 @@
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image/stb_image.h>
 
 namespace tinyobj
 {
@@ -25,6 +27,22 @@ AssetStorage::AssetStorage(Core& vkCore)
 }
 
 void AssetStorage::LoadModel(const std::string& objFile, const std::string& textureFile, const std::string& modelName)
+{
+  auto [vertexBuffer, indexBuffer, indicesSize] = LoadMesh(objFile);
+  Image texture = LoadTexture(textureFile);
+
+  staticMeshes.insert({
+    modelName,
+    StaticMesh{
+      std::move(vertexBuffer),
+      std::move(indexBuffer),
+      static_cast<uint32_t>(indicesSize),
+      std::move(texture),
+    },
+  });
+}
+
+std::tuple<Buffer, Buffer, uint32_t> AssetStorage::LoadMesh(const std::string& objFile)
 {
   tinyobj::ObjReader reader;
 
@@ -61,7 +79,7 @@ void AssetStorage::LoadModel(const std::string& objFile, const std::string& text
         tinyobjIndexToVertexIndexMap.insert({
           index,
           static_cast<uint32_t>(vertices.size())
-        });
+          });
 
         StaticMesh::Vertex vertex;
 
@@ -103,12 +121,30 @@ void AssetStorage::LoadModel(const std::string& objFile, const std::string& text
   Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
   Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
 
-  staticMeshes.insert({
-    modelName,
-    StaticMesh{
-      std::move(vertexBuffer),
-      std::move(indexBuffer),
-      static_cast<uint32_t>(indices.size()),
-    },
-  });
+  return { std::move(vertexBuffer), std::move(indexBuffer), static_cast<uint32_t>(indices.size()) };
+}
+
+Image AssetStorage::LoadTexture(const std::string& textureFile)
+{
+  int x, y, n;
+  int channels_in_file;
+  int force_rgba = 4;
+
+
+  stbi_uc* uc = stbi_load(textureFile.c_str(), &x, &y, &channels_in_file, force_rgba);
+
+  struct stbiDeleter
+  {
+    inline void operator()(void* img)
+    {
+      stbi_image_free(img);
+    }
+  };
+
+  std::unique_ptr<void, stbiDeleter> src(
+    reinterpret_cast<void*>(uc)
+  );
+
+  Image img = vkCore.Allocate2DImage(src.get(), x* y* (1 * 4), vk::Format::eR8G8B8A8Unorm, vk::Extent2D{ static_cast<uint32_t>(x),static_cast<uint32_t>(y) }, vk::ImageUsageFlagBits::eSampled);
+  return std::move(img);
 }

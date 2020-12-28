@@ -73,8 +73,9 @@ private:
       const YAML::Node mesh = meshes[i];
       const std::string name = mesh["name"].as<std::string>();
       const std::string meshFile = mesh["mesh_file"].as<std::string>();
+      const std::string textureFile = mesh["texture_file"].as<std::string>();
 
-      assetStorage->LoadModel(meshFile, "", name);
+      assetStorage->LoadModel(meshFile, textureFile, name);
     }
   }
 

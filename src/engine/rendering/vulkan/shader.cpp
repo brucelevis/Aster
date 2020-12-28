@@ -12,6 +12,9 @@ namespace
     case UniformType::UniformBuffer:
       return vk::DescriptorType::eUniformBuffer;
 
+    case UniformType::Sampler2D:
+      return vk::DescriptorType::eCombinedImageSampler;
+
     default:
       throw std::runtime_error("unknown uniform type.");
     }

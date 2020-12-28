@@ -66,6 +66,7 @@ void RenderSystem::Update(const double dt)
             mvpResource.mvp = projection * view * model;
 
             uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
+            uniforms->SetSampler2D("MeshTexture", meshComponent->mesh->texture);
             std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
 
             context.commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, p->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);

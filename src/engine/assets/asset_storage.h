@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <string>
 #include <optional>
+#include <tuple>
 
 class Core;
 
@@ -24,6 +25,10 @@ public:
   }
 
   void LoadModel(const std::string& objFile, const std::string& textureFile, const std::string& modelName);
+
+private:
+  std::tuple<Buffer, Buffer, uint32_t> LoadMesh(const std::string& objFile);
+  Image LoadTexture(const std::string& textureFile);
 
 private:
   Core& vkCore;

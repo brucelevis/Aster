@@ -5,6 +5,7 @@
 #include "buffer.h"
 
 class Core;
+class Image;
 
 class UniformsAccessor
 {
@@ -14,11 +15,7 @@ public:
   template<class T>
   void SetUniformBuffer(const UniformName& name, const T* data)
   {
-    const UniformSetPair setBinding = uniforms.GetSetBindingPair(name);
-    const UniformBindingDescription& bindingDescription = uniforms.GetBindingDescription(setBinding.set, setBinding.binding);
-
-    if (bindingDescription.type != UniformType::UniformBuffer)
-      throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform is not UBO type.");
+    auto [setBinding, bindingDescription, dscSet] = AccessDescriptorSet(name, UniformType::UniformBuffer);
 
     if (sizeof(T) != bindingDescription.size)
       throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
@@ -26,22 +23,6 @@ public:
     HostBuffer buf = core.AllocateHostBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
     buf.UploadMemory(data, sizeof(T), 0);
     ownedBuffers.push_back(std::move(buf));
-
-    const bool isUboForThisBindingAlreadySet = writes.find(setBinding) != writes.end();
-    vk::DescriptorSet& dscSet = currentDescriptorSets[setBinding.set];
-
-    if (dscSet == vk::DescriptorSet{} || isUboForThisBindingAlreadySet)
-    {
-      const auto allocInfo = vk::DescriptorSetAllocateInfo()
-        .setDescriptorPool(descriptorPool)
-        .setDescriptorSetCount(1)
-        .setPSetLayouts(&layouts[setBinding.set]);
-
-      vk::UniqueDescriptorSet s = std::move(core.GetLogicalDevice().allocateDescriptorSetsUnique(allocInfo)[0]);
-      dscSet = s.get();
-
-      ownedDescriptorSets.push_back(std::move(s));
-    }
 
     writes[setBinding] = vk::WriteDescriptorSet()
       .setDescriptorCount(1)
@@ -51,6 +32,10 @@ public:
       .setDstSet(dscSet)
       .setPBufferInfo(&ownedBuffers.back().GetFullBufferUpdateInfo());
   }
+
+  std::tuple<UniformSetPair, UniformBindingDescription, vk::DescriptorSet> AccessDescriptorSet(const UniformName& name, UniformType type);
+
+  void SetSampler2D(const UniformName& name, const Image& img);
 
   std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
 

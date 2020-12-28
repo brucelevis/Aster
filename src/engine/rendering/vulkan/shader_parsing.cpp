@@ -161,18 +161,34 @@ PipelineUniforms SpirvParser::ParseShader(const std::vector<uint32_t>& byteCode)
   for (const auto& ubo : resources.uniform_buffers)
   {
     spirv_cross::SPIRType type = glsl.get_type(ubo.type_id);
-    const size_t size = glsl.get_declared_struct_size(type);
 
     UniformBindingDescription description;
     description.size = glsl.get_declared_struct_size(type);
     description.type = UniformType::UniformBuffer;
     description.stages = stage;
 
-    std::printf("Info: Shader Parsing: {name:%s size:%d type:%d stages:%d}\n", ubo.name.c_str(), description.size, description.type, description.stages);
-
     const unsigned int set = glsl.get_decoration(ubo.id, spv::Decoration::DecorationDescriptorSet);
     const unsigned int binding = glsl.get_decoration(ubo.id, spv::Decoration::DecorationBinding);
+
     uniforms.AddUniform(set, binding, ubo.name, description);
+  }
+
+  for (const auto& sampler : resources.sampled_images)
+  {
+    spirv_cross::SPIRType type = glsl.get_type(sampler.type_id);
+
+    if (type.image.dim != spv::Dim2D)
+      throw std::runtime_error("Sampler's dim != 2");
+
+    UniformBindingDescription description;
+    description.size = 0;
+    description.stages = stage;
+    description.type = UniformType::Sampler2D;
+
+    const unsigned int set = glsl.get_decoration(sampler.id, spv::Decoration::DecorationDescriptorSet);
+    const unsigned int binding = glsl.get_decoration(sampler.id, spv::Decoration::DecorationBinding);
+
+    uniforms.AddUniform(set, binding, sampler.name, description);
   }
 
   return uniforms;

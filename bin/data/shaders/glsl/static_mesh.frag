@@ -5,8 +5,9 @@ layout(location = 1) in vec2 uv;
 
 layout(location = 0) out vec4 outColor;
 
+layout(set = 0, binding = 1) uniform sampler2D MeshTexture;
 
 void main()
 {
-  outColor = vec4(1.0, 0.0f, 0.5f, 1.0f);
+  outColor = texture(MeshTexture,uv);
 }
