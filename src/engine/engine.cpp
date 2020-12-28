@@ -2,6 +2,7 @@
 
 #include <engine/assets/asset_storage.h>
 #include <engine/rendering/renderer.h>
+#include <engine/input/input_handler.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -22,6 +23,7 @@ Engine::Engine()
 
   vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ 800, 600 });
   assetStorage = std::make_unique<AssetStorage>(*vkCore);
+  inputHandler = std::make_unique<InputHandler>(wnd);
 
   ecsContext.SetUserData(this);
   ecsContext.AddLogicSystems({

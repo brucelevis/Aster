@@ -4,8 +4,9 @@
 
 #include <memory>
 
-class Core;
 class AssetStorage;
+class Core;
+class InputHandler;
 struct GLFWwindow;
 
 class Engine
@@ -21,6 +22,11 @@ public:
     return assetStorage.get();
   }
 
+  inline InputHandler* GetInputHandler() const
+  {
+    return inputHandler.get();
+  }
+
   inline void AddSystems(std::function<void(Context&)> addSystems)
   {
     addSystems(ecsContext);
@@ -33,4 +39,5 @@ private:
   GLFWwindow* wnd;
   std::unique_ptr<Core> vkCore;
   std::unique_ptr<AssetStorage> assetStorage;
+  std::unique_ptr<InputHandler> inputHandler;
 };
