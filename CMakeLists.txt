@@ -17,7 +17,7 @@ set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set(YAML_CPP_DEP_DIR "${DEP_DIR}/yaml-cpp")
 set(STB_IMAGE_DEP_DIR "${DEP_DIR}/stb_image")
 
-set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib" "${STB_IMAGE_DEP_DIR}/")
+set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/src"
