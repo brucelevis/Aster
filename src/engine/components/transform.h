@@ -3,7 +3,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/quaternion.hpp"
 
-enum OrientationVectorType
+enum class OrientationVectorType
 {
   Forward,
   Right,
@@ -34,16 +34,16 @@ struct Transform
   
   inline glm::vec3 Transform::GetForwardVector() const
   {
-    return GetOrientationVector(Forward);
+    return GetOrientationVector(OrientationVectorType::Forward);
   }
 
   inline glm::vec3 Transform::GetUpVector() const
   {
-    return GetOrientationVector(Up);
+    return GetOrientationVector(OrientationVectorType::Up);
   }
 
   inline glm::vec3 Transform::GetRightVector() const
   {
-    return GetOrientationVector(Right);
+    return GetOrientationVector(OrientationVectorType::Right);
   }
 };

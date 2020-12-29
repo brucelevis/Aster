@@ -88,10 +88,16 @@ void GLFW_CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 }
 
 InputHandler::InputHandler(GLFWwindow* window)
+  : window(window)
 {
   glfwSetWindowUserPointer(window, this);
   glfwSetKeyCallback(window, GLFW_KeyCallback);
   glfwSetCursorPosCallback(window, GLFW_CursorPositionCallback);
+}
+
+void InputHandler::PollEvents()
+{
+  glfwPollEvents();
 }
 
 void InputHandler::KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -101,7 +107,7 @@ void InputHandler::KeyCallback(GLFWwindow* window, int key, int scancode, int ac
   {
     KeyAction currentKeyAction = GlfwKeyActionToEngine(action);
 
-    const float value = currentKeyAction == KeyAction::Release ? 0.0f : state.Value;
+    const float value = currentKeyAction == KeyAction::Release ? 0.0f : state.value;
     state.binding(value);
     state.lastAction = currentKeyAction;
   }
@@ -129,8 +135,14 @@ void InputHandler::CursorPositionCallback(GLFWwindow* window, double xpos, doubl
   mouseState.lastY = ypos;
 }
 
-void InputHandler::SetKeyBinding(const std::string& key, KeyInputBinding binding)
+void InputHandler::SetKeyBinding(const std::string& key, float value, KeyInputBinding binding)
 {
   const int glfwKey = StringToGlfwKeyMap.at(key);
   keyStates[glfwKey].binding = binding;
+  keyStates[glfwKey].value = value;
+}
+
+void InputHandler::DisableCursor()
+{
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }

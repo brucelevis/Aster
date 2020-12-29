@@ -2,7 +2,6 @@
 
 #include <engine/assets/asset_storage.h>
 #include <engine/rendering/renderer.h>
-#include <engine/input/input_handler.h>
 
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
@@ -47,7 +46,6 @@ void Engine::Start()
     const float dt = static_cast<float>(t2 - t1) / static_cast<float>(CLOCKS_PER_SEC);
     t1 = t2;
 
-    glfwPollEvents();
     ecsContext.UpdateSystems(dt);
   }
 }

@@ -1,12 +1,13 @@
 #pragma once
 
+#include <engine/input/input_handler.h>
+
 #include <ecs/Context.h>
 
 #include <memory>
 
 class AssetStorage;
 class Core;
-class InputHandler;
 struct GLFWwindow;
 
 class Engine

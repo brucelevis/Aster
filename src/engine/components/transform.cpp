@@ -103,10 +103,10 @@ glm::mat4 Transform::GetCameraTransformationMatrixWithoutScale() const
   const Transform* parent = this;
   while (parent != nullptr)
   {
-    glm::mat4 parentMat(1);
-    parentMat = glm::translate(parentMat, -parent->LocalPosition);
-    parentMat = parentMat * glm::mat4_cast(glm::inverse(parent->LocalRotation));
+    const glm::vec3 inversePosition = -parent->LocalPosition;
+    const glm::quat inverseRotation = glm::inverse(parent->LocalRotation);
 
+    const glm::mat4 parentMat = glm::mat4_cast(inverseRotation) * glm::translate(glm::mat4(1), inversePosition);
     mat = parentMat * mat;
 
     parent = parent->Parent;
@@ -121,13 +121,13 @@ glm::vec3 Transform::GetOrientationVector(OrientationVectorType type) const
   const glm::mat4 mat = GetTransformationMatrixWithoutScale();
   switch (type)
   {
-  case Forward:
-    return glm::vec3{ mat * glm::vec4{ 0.0f, 0.0f, 1.0f, 0.0f } };
+  case OrientationVectorType::Forward:
+    return glm::vec3{ mat * glm::vec4{ 0.0f, 0.0f, -1.0f, 0.0f } };
 
-  case Right:
+  case OrientationVectorType::Right:
     return glm::vec3{ mat * glm::vec4{ 1.0f, 0.0f, 0.0f, 0.0f } };
 
-  case Up:
+  case OrientationVectorType::Up:
     return glm::vec3{ mat * glm::vec4{ 0.0f, -1.0f, 0.0f, 0.0f } };
 
   default:

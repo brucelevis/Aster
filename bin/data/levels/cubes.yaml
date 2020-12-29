@@ -11,3 +11,7 @@ objects:
     - mesh: cube
       position: [1.0, -4.0, -20.0]
       scale: [1.0, 1.0, 1.0]
+    
+    - mesh: cube
+      position: [0.0, 5.0, 0]
+      scale: [50.0, 1.0, 50.0]
