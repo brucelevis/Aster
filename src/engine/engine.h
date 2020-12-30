@@ -13,7 +13,18 @@ struct GLFWwindow;
 class Engine
 {
 public:
-  Engine();
+  struct Settings
+  {
+    struct
+    {
+      bool isFullscreen = false;
+      uint32_t width = 800;
+      uint32_t height = 800;
+    } window;
+  };
+
+public:
+  Engine(const Settings& settings);
   ~Engine();
 
   void Start();
@@ -36,6 +47,7 @@ public:
 private:
 
 private:
+  Settings settings;
   Context ecsContext;
   GLFWwindow* wnd;
   std::unique_ptr<Core> vkCore;

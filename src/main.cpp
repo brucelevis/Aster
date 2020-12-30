@@ -259,7 +259,13 @@ private:
 
 int main()
 {
-  Engine engine;
+  Engine::Settings settings;
+  settings.window.isFullscreen = false;
+  settings.window.width = 1920;
+  settings.window.height = 1024;
+
+  Engine engine{ settings };
+
   engine.AddSystems([](Context& ecsContext)
   {
       ecsContext.AddInitializationSystems({

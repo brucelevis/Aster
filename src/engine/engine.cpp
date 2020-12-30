@@ -10,17 +10,29 @@
 
 #include <ctime>
 
-Engine::Engine()
+Engine::Engine(const Settings& settings)
+  : settings(settings)
 {
   glfwInit();
 
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  this->wnd = glfwCreateWindow(800, 600, "Vulkan window", nullptr, nullptr);
+
+  if (settings.window.isFullscreen)
+  {
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    this->wnd = glfwCreateWindow(mode->width, mode->height, "Vulkan window", monitor, nullptr);
+  }
+  else
+  {
+    this->wnd = glfwCreateWindow(settings.window.width, settings.window.height, "Vulkan window", nullptr, nullptr);
+  }
 
   uint32_t count;
   const char** extensions = glfwGetRequiredInstanceExtensions(&count);
 
-  vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ 800, 600 });
+  vkCore = std::make_unique<Core>(wnd, extensions, count, vk::Extent2D{ settings.window.width, settings.window.height });
   assetStorage = std::make_unique<AssetStorage>(*vkCore);
   inputHandler = std::make_unique<InputHandler>(wnd);
 
