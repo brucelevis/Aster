@@ -11,7 +11,7 @@
 
 namespace
 {
-  Entity* CreateCameraEntity(EntityManager* em)
+  Entity* CreateCameraEntity(EntityManager* em, float width, float height)
   {
     Entity* e = em->NewEntity();
 
@@ -23,8 +23,8 @@ namespace
     camera->transform.LocalRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
     camera->transform.AttachTo(&root->transform);
     camera->angle = glm::radians(45.0f);
-    camera->width = 800;
-    camera->height = 600;
+    camera->width = width;
+    camera->height = height;
     camera->zNear = 0.1f;
     camera->zFar = 100.0f;
 
@@ -81,8 +81,9 @@ void LevelInitializationSystem::CreateObjects(const YAML::Node& config)
 {
   EntityManager* em = pContext->GetEntityManager();
   AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
+  Engine::Settings engineSettings = pContext->GetUserData<Engine*>()->GetSettings();
 
-  CreateCameraEntity(em);
+  CreateCameraEntity(em, engineSettings.window.width, engineSettings.window.height);
 
   const YAML::Node objects = config["objects"];
 

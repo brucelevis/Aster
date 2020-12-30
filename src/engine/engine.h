@@ -44,6 +44,11 @@ public:
     addSystems(ecsContext);
   }
 
+  inline const Settings& GetSettings() const
+  {
+    return settings;
+  }
+
 private:
 
 private:
