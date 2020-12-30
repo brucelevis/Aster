@@ -6,19 +6,47 @@ engine:
 
 application:
   meshes:
-      - name: cube
-        mesh_file: ../data/meshes/cube/cube.obj
-        texture_file: ../data/meshes/cube/cube.jpg
+    - name: cube
+      mesh_file: ../data/meshes/cube/cube.obj
+      texture_file: ../data/meshes/cube/cube.jpg
 
-  objects:
-      - mesh: cube
-        position: [3.0, 1.0, -15.0]
-        scale: [1.0, 1.0, 1.0]
+  entities:
+    - components:
+       - type: camera
+         position: [0.0, 0.0, 0.0]
+         fov: 45.0
+         zNear: 0.1
+         zFar: 100.0
 
-      - mesh: cube
-        position: [1.0, -4.0, -20.0]
-        scale: [1.0, 1.0, 1.0]
-    
-      - mesh: cube
-        position: [0.0, 5.0, 0]
-        scale: [50.0, 1.0, 50.0]
+    - components:
+       - type: root
+         position: [3.0, 1.0, -15.0]
+         scale: [1.0, 1.0, 1.0]
+
+       - type: static_mesh
+         mesh: cube
+         position: [0.0, 0.0, 0.0]
+         scale: [1.0, 1.0, 1.0]
+         attach_to_root: yes
+
+    - components:
+       - type: root
+         position: [1.0, -4.0, -20.0]
+         scale: [1.0, 1.0, 1.0]
+
+       - type: static_mesh
+         mesh: cube
+         position: [0.0, 0.0, 0.0]
+         scale: [1.0, 1.0, 1.0]
+         attach_to_root: yes
+
+    - components:
+       - type: root
+         position: [0.0, 5.0, 0]
+         scale: [50.0, 1.0, 50.0]
+
+       - type: static_mesh
+         mesh: cube
+         position: [0.0, 0.0, 0.0]
+         scale: [1.0, 1.0, 1.0]
+         attach_to_root: yes
