@@ -1,17 +1,24 @@
-meshes:
-    - name: cube
-      mesh_file: ../data/meshes/cube/cube.obj
-      texture_file: ../data/meshes/cube/cube.jpg
+engine:
+  window:
+    width: 1920
+    height: 1024
+    fullscreen: no
 
-objects:
-    - mesh: cube
-      position: [3.0, 1.0, -15.0]
-      scale: [1.0, 1.0, 1.0]
+application:
+  meshes:
+      - name: cube
+        mesh_file: ../data/meshes/cube/cube.obj
+        texture_file: ../data/meshes/cube/cube.jpg
+
+  objects:
+      - mesh: cube
+        position: [3.0, 1.0, -15.0]
+        scale: [1.0, 1.0, 1.0]
+
+      - mesh: cube
+        position: [1.0, -4.0, -20.0]
+        scale: [1.0, 1.0, 1.0]
     
-    - mesh: cube
-      position: [1.0, -4.0, -20.0]
-      scale: [1.0, 1.0, 1.0]
-    
-    - mesh: cube
-      position: [0.0, 5.0, 0]
-      scale: [50.0, 1.0, 50.0]
+      - mesh: cube
+        position: [0.0, 5.0, 0]
+        scale: [50.0, 1.0, 50.0]

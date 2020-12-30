@@ -49,7 +49,7 @@ namespace
   }
 }
 
-LevelInitializationSystem::LevelInitializationSystem(Context* pContext, const std::string& levelYaml)
+LevelInitializationSystem::LevelInitializationSystem(Context* pContext, const YAML::Node& levelYaml)
   : InitializationSystem(pContext)
   , levelYaml(levelYaml)
 {
@@ -57,10 +57,8 @@ LevelInitializationSystem::LevelInitializationSystem(Context* pContext, const st
 
 void LevelInitializationSystem::Initialize()
 {
-  const YAML::Node config = YAML::LoadFile(levelYaml);
-
-  LoadMeshes(config);
-  CreateObjects(config);
+  LoadMeshes(levelYaml);
+  CreateObjects(levelYaml);
 }
 
 void LevelInitializationSystem::LoadMeshes(const YAML::Node& config)

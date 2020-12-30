@@ -14,7 +14,7 @@ class Context;
 class LevelInitializationSystem : public InitializationSystem
 {
 public:
-  LevelInitializationSystem(Context* pContext, const std::string& levelYaml);
+  LevelInitializationSystem(Context* pContext, const YAML::Node& levelYaml);
 
   virtual void Initialize() override;
 
@@ -23,5 +23,5 @@ private:
   void CreateObjects(const YAML::Node& config);
 
 private:
-  std::string levelYaml;
+  const YAML::Node& levelYaml;
 };
