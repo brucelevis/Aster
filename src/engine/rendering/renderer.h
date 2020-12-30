@@ -11,6 +11,7 @@ class Context;
 class Group;
 class Core;
 struct GLFWwindow;
+struct CameraComponent;
 
 class RenderSystem : public LogicSystem
 {
@@ -20,10 +21,13 @@ public:
   virtual void Update(const double dt) override;
 
 private:
+  void RenderStaticMeshes(CameraComponent* camera, Pipeline* pipeline, UniformsAccessor* uniforms, vk::CommandBuffer& commandBuffer);
+
+private:
   Core& vkCore;
 
   Group* cameraGroup;
   Group* staticMeshGroup;
 
-  std::unique_ptr<ShaderProgram> static_mesh_shader_program;
+  std::unique_ptr<ShaderProgram> staticMeshShaderProgram;
 };

@@ -10,17 +10,9 @@ struct DepthStencilSettings
 {
   bool depthTestEnabled = false;
   bool depthWriteEnabled = false;
-
-  inline DepthStencilSettings& SetDepthTestEnabled(bool b) {
-    depthTestEnabled = b;
-    return *this;
-  }
-
-  inline DepthStencilSettings& SetDepthWriteEnabled(bool b) {
-    depthWriteEnabled = b;
-    return *this;
-  }
 };
+
+constexpr DepthStencilSettings EnableDepthTest{ true, true };
 
 class Pipeline
 {
