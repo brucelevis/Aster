@@ -17,6 +17,8 @@ set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set(YAML_CPP_DEP_DIR "${DEP_DIR}/yaml-cpp")
 set(STB_IMAGE_DEP_DIR "${DEP_DIR}/stb_image")
 
+file(GLOB_RECURSE ASTER_SOURCES "${CMAKE_SOURCE_DIR}/src/application/*.cpp" "${CMAKE_SOURCE_DIR}/src/application/*.h" "${CMAKE_SOURCE_DIR}/src/application/*.hpp")
+
 set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib")
 
 include_directories(
@@ -31,7 +33,7 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/Catch2")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shader_parsing")
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/ecs")
 
-add_executable(ASTER_EXE "${CMAKE_SOURCE_DIR}/src/main.cpp")
+add_executable(ASTER_EXE ${ASTER_SOURCES})
 set_target_properties(ASTER_EXE PROPERTIES 
                         CXX_STANDARD 17
                         CXX_STANDARD_REQUIRED YES
