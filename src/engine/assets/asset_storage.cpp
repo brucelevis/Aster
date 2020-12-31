@@ -6,132 +6,180 @@
 #include <array>
 #include <map>
 #include <tuple>
+#include <stack>
+#include <optional>
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tinyobjloader/tiny_obj_loader.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image/stb_image.h>
 
-namespace tinyobj
+namespace
 {
-  bool operator<(const index_t& l, const index_t& r)
+  const std::string DefaultTextureFile = "../data/meshes/default/default.jpg";
+
+  inline std::string GetFolderPath(const std::string& filePath)
   {
-    return  std::tie(l.normal_index, l.texcoord_index, l.vertex_index) < std::tie(r.normal_index, r.texcoord_index, r.vertex_index);
+    return filePath.substr(0, filePath.find_last_of("\\/"));
+  }
+
+  inline glm::vec3 AiVec3dToGlm(const aiVector3D& vec)
+  {
+    return glm::vec3{ vec.x, vec.y, vec.z };
+  }
+
+  inline glm::vec2 AiVec3dToGlm2D(const aiVector3D& vec)
+  {
+    return glm::vec2{ vec.x, vec.y};
+  }
+
+
+  struct TextureFiles
+  {
+    std::optional<std::string> color;
+    std::optional<std::string> metallic;
+    std::optional<std::string> rougness;
+    std::optional<std::string> normals;
+  };
+
+  std::tuple<std::vector<StaticMesh::Vertex>, std::vector<uint32_t>, TextureFiles> GatherMeshData(aiMesh* mesh, aiMaterial* material, const std::string& meshFileDir)
+  {
+    std::vector<StaticMesh::Vertex> vertices;
+    vertices.reserve(mesh->mNumVertices);
+
+    for (int nVertex = 0; nVertex < mesh->mNumVertices; ++nVertex)
+    {
+      vertices.push_back(StaticMesh::Vertex{
+        AiVec3dToGlm(mesh->mVertices[nVertex]),
+        AiVec3dToGlm(mesh->mNormals[nVertex]),
+        AiVec3dToGlm2D(mesh->mTextureCoords[0][nVertex])
+        });
+    }
+
+    std::vector<uint32_t> indices;
+    indices.reserve(mesh->mNumFaces * 3);
+
+    for (int nFace = 0; nFace < mesh->mNumFaces; ++nFace)
+    {
+      indices.push_back({
+        mesh->mFaces[nFace].mIndices[0]
+        });
+      indices.push_back({
+        mesh->mFaces[nFace].mIndices[1]
+        });
+      indices.push_back({
+        mesh->mFaces[nFace].mIndices[2]
+        });
+    }
+
+    TextureFiles textureFiles;
+
+    auto getTexture = [&](aiTextureType type) -> std::optional<std::string>
+    {
+      if (material->GetTextureCount(type) != 0)
+      {
+        aiString path;
+        if (material->GetTexture(type, 0, &path))
+          return std::nullopt;
+
+        return meshFileDir + "/" + std::string(path.C_Str(), path.length);
+      }
+
+      return std::nullopt;
+    };
+
+    textureFiles.color = getTexture(aiTextureType::aiTextureType_BASE_COLOR);
+    // let's try non pbr texture
+    if (textureFiles.color.has_value() == false)
+      textureFiles.color = getTexture(aiTextureType::aiTextureType_DIFFUSE);
+
+    textureFiles.metallic = getTexture(aiTextureType::aiTextureType_METALNESS);
+    textureFiles.rougness = getTexture(aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS);
+    textureFiles.normals = getTexture(aiTextureType::aiTextureType_NORMALS);
+
+    return { vertices, indices, textureFiles };
   }
 }
 
 AssetStorage::AssetStorage(Core& vkCore)
   : vkCore(vkCore)
 {
-  
+  LoadTexture(DefaultTextureFile);
 }
 
-void AssetStorage::LoadModel(const std::string& objFile, const std::string& textureFile, const std::string& modelName)
+StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string& modelName)
 {
-  auto [vertexBuffer, indexBuffer, indicesSize] = LoadMesh(objFile);
-  Image texture = LoadTexture(textureFile);
+  StaticModel staticModel;
 
-  staticMeshes.insert({
-    modelName,
-    StaticMesh{
-      std::move(vertexBuffer),
-      std::move(indexBuffer),
-      static_cast<uint32_t>(indicesSize),
-      std::move(texture),
-    },
-  });
-}
+  Assimp::Importer importer;
+  const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_GenNormals);
 
-std::tuple<Buffer, Buffer, uint32_t> AssetStorage::LoadMesh(const std::string& objFile)
-{
-  tinyobj::ObjReader reader;
+  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    throw std::runtime_error(importer.GetErrorString());
 
-  tinyobj::ObjReaderConfig config;
-  config.triangulate = true;
+  std::stack<aiNode*> aiNodesToProcess;
+  aiNodesToProcess.push(scene->mRootNode);
 
-  if (!reader.ParseFromFile(objFile, config)) {
-    if (!reader.Error().empty()) {
-      std::printf("tinyobj: %s: error: %s\n", objFile.c_str(), reader.Error().c_str());
-      throw std::runtime_error(reader.Error());
-    }
-  }
-
-  if (!reader.Warning().empty()) {
-    std::printf("tinyobj: %s: warning: %s\n", objFile.c_str(), reader.Warning().c_str());
-  }
-
-  const tinyobj::attrib_t& attrib = reader.GetAttrib();
-  std::vector<StaticMesh::Vertex> vertices;
-  std::vector<uint32_t> indices;
-
-  std::map<tinyobj::index_t, uint32_t> tinyobjIndexToVertexIndexMap;
-
-  for (const tinyobj::shape_t& shape : reader.GetShapes())
+  while (!aiNodesToProcess.empty())
   {
-    for (const tinyobj::index_t& index : shape.mesh.indices)
+    aiNode* node = aiNodesToProcess.top();
+    aiNodesToProcess.pop();
+
+    for (int i = 0; i < node->mNumChildren; ++i)
+      aiNodesToProcess.push(node->mChildren[i]);
+
+    for (int i = 0; i < node->mNumMeshes; ++i)
     {
-      if (tinyobjIndexToVertexIndexMap.find(index) != tinyobjIndexToVertexIndexMap.end())
-      {
-        indices.push_back(tinyobjIndexToVertexIndexMap.at(index));
-      }
-      else
-      {
-        tinyobjIndexToVertexIndexMap.insert({
-          index,
-          static_cast<uint32_t>(vertices.size())
-          });
+      aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+      aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
-        StaticMesh::Vertex vertex;
+      auto [staticMesh, meshMaterial] = ProcessMesh(mesh, mat, GetFolderPath(file));
 
-        vertex.position.x = attrib.vertices[3 * index.vertex_index + 0];
-        vertex.position.y = attrib.vertices[3 * index.vertex_index + 1];
-        vertex.position.z = attrib.vertices[3 * index.vertex_index + 2];
-
-        if (index.normal_index != -1)
-        {
-          vertex.normal = glm::vec3{
-            attrib.vertices[3 * index.normal_index + 0],
-            attrib.vertices[3 * index.normal_index + 1],
-            attrib.vertices[3 * index.normal_index + 2],
-          };
-        }
-        else
-        {
-          vertex.normal = glm::vec3{ 0.0f, -1.0f, 0.0f };
-        }
-
-        if (index.texcoord_index != -1)
-        {
-          vertex.uv = glm::vec2{
-            attrib.texcoords[2 * index.texcoord_index + 0],
-            attrib.texcoords[2 * index.texcoord_index + 1],
-          };
-        }
-        else
-        {
-          vertex.uv = glm::vec2{ 0.0f, 0.0f };
-        }
-
-        indices.push_back(vertices.size());
-        vertices.push_back(vertex);
-      }
+      staticModel.meshes.push_back(std::move(staticMesh));
+      staticModel.materials.push_back(meshMaterial);
     }
   }
+
+  staticModels.insert({
+    modelName,
+    std::move(staticModel)
+  });
+
+  return &staticModels.at(modelName);
+}
+
+std::tuple<StaticMesh, Material> AssetStorage::ProcessMesh(aiMesh* mesh, aiMaterial* mat, const std::string& meshFileDir)
+{
+  auto [vertices, indices, textureFiles] = GatherMeshData(mesh, mat, meshFileDir);
 
   Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
   Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
 
-  return { std::move(vertexBuffer), std::move(indexBuffer), static_cast<uint32_t>(indices.size()) };
+  StaticMesh staticMesh{
+      std::move(vertexBuffer),
+      std::move(indexBuffer),
+      static_cast<uint32_t>(indices.size())
+  };
+
+  Material meshMaterial;
+  meshMaterial.colorTexture = GetTexture(textureFiles.color.value_or(DefaultTextureFile));
+  meshMaterial.metallicTexture = GetTexture(textureFiles.metallic.value_or(DefaultTextureFile));
+  meshMaterial.roughnessTexture = GetTexture(textureFiles.rougness.value_or(DefaultTextureFile));
+  meshMaterial.normalsTexture = GetTexture(textureFiles.normals.value_or(DefaultTextureFile));
+
+  return { std::move(staticMesh), meshMaterial };
 }
 
-Image AssetStorage::LoadTexture(const std::string& textureFile)
+Image* AssetStorage::LoadTexture(const std::string& textureFile)
 {
   int x, y, n;
   int channels_in_file;
   int force_rgba = 4;
 
-
   stbi_uc* uc = stbi_load(textureFile.c_str(), &x, &y, &channels_in_file, force_rgba);
+  assert(uc);
 
   struct stbiDeleter
   {
@@ -146,5 +194,18 @@ Image AssetStorage::LoadTexture(const std::string& textureFile)
   );
 
   Image img = vkCore.Allocate2DImage(src.get(), x* y* (1 * 4), vk::Format::eR8G8B8A8Unorm, vk::Extent2D{ static_cast<uint32_t>(x),static_cast<uint32_t>(y) }, vk::ImageUsageFlagBits::eSampled);
-  return std::move(img);
+
+  textures.insert({ textureFile, std::move(img) });
+
+  return &textures.at(textureFile);
+}
+
+Image* AssetStorage::GetTexture(const std::string& textureFile)
+{
+  auto it = textures.find(textureFile);
+
+  if (it != textures.end())
+    return &it->second;
+
+  return LoadTexture(textureFile);
 }

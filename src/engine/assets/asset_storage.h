@@ -8,30 +8,34 @@
 #include <tuple>
 
 class Core;
+struct aiMesh;
+struct aiMaterial;
 
 class AssetStorage
 {
 public:
   AssetStorage(Core& vkCore);
 
-  inline StaticMesh* GetStaticMesh(const std::string name)
+  inline StaticModel* GetStaticModel(const std::string name)
   {
-    const auto it = staticMeshes.find(name);
+    const auto it = staticModels.find(name);
     
-    if (it != staticMeshes.end())
+    if (it != staticModels.end())
       return &it->second;
 
     return nullptr;
   }
 
-  void LoadModel(const std::string& objFile, const std::string& textureFile, const std::string& modelName);
+  StaticModel* LoadModel(const std::string& file, const std::string& modelName);
 
 private:
-  std::tuple<Buffer, Buffer, uint32_t> LoadMesh(const std::string& objFile);
-  Image LoadTexture(const std::string& textureFile);
+  std::tuple<StaticMesh, Material> ProcessMesh(aiMesh* mesh, aiMaterial* mat, const std::string& meshFileDir);
+  Image* LoadTexture(const std::string& textureFile);
+  Image* GetTexture(const std::string& textureFile);
 
 private:
   Core& vkCore;
 
-  std::unordered_map<std::string, StaticMesh> staticMeshes;
+  std::unordered_map<std::string, StaticModel> staticModels;
+  std::unordered_map<std::string, Image> textures;
 };

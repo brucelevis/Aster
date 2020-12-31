@@ -71,14 +71,23 @@ void RenderSystem::RenderStaticMeshes(CameraComponent* camera, Pipeline* pipelin
       mvpResource.mvp = projection * view * model;
 
       uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
-      uniforms->SetSampler2D("MeshTexture", meshComponent->mesh->texture);
-      std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
 
-      commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-      vk::DeviceSize offset = 0;
-      commandBuffer.bindVertexBuffers(0, 1, &meshComponent->mesh->vertices.GetBuffer(), &offset);
-      commandBuffer.bindIndexBuffer(meshComponent->mesh->indices.GetBuffer(), 0, vk::IndexType::eUint32);
-      commandBuffer.drawIndexed(meshComponent->mesh->indexCount, 1, 0, 0, 0);
+      for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
+      {
+        const StaticMesh& mesh = meshComponent->model->meshes[i];
+        const Material& meshMaterial = meshComponent->model->materials[i];
+
+        assert(meshMaterial.colorTexture != nullptr);
+
+        uniforms->SetSampler2D("MeshTexture", *meshMaterial.colorTexture);
+        std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+        vk::DeviceSize offset = 0;
+        commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
+        commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
+        commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
+      }
     }
   }
 }

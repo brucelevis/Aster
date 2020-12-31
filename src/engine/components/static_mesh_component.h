@@ -14,14 +14,27 @@ struct StaticMesh
 {
   Buffer vertices;
   Buffer indices;
-  unsigned int indexCount;
-  Image texture;
+  unsigned int indexCount = 0;
 
   typedef StaticMeshVertex Vertex;
+};
+
+struct Material
+{
+  Image* colorTexture = nullptr;
+  Image* metallicTexture = nullptr;
+  Image* roughnessTexture = nullptr;
+  Image* normalsTexture = nullptr;
+};
+
+struct StaticModel
+{
+  std::vector<StaticMesh> meshes;
+  std::vector<Material> materials;
 };
 
 struct StaticMeshComponent : public BaseComponent
 {
   Transform transform;
-  StaticMesh* mesh;
+  StaticModel* model;
 };

@@ -31,9 +31,8 @@ void LevelInitializationSystem::LoadMeshes(const YAML::Node& config)
     const YAML::Node mesh = meshes[i];
     const std::string name = mesh["name"].as<std::string>();
     const std::string meshFile = mesh["mesh_file"].as<std::string>();
-    const std::string textureFile = mesh["texture_file"].as<std::string>();
 
-    assetStorage->LoadModel(meshFile, textureFile, name);
+    assetStorage->LoadModel(meshFile, name);
   }
 }
 
@@ -89,7 +88,7 @@ void LevelInitializationSystem::AddStaticMeshComponentToEntity(Entity* entity, c
   AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
 
   StaticMeshComponent* staticMesh = entity->AddComponent<StaticMeshComponent>("Static Mesh");
-  staticMesh->mesh = as->GetStaticMesh(meshName);
+  staticMesh->model = as->GetStaticModel(meshName);
   
   staticMesh->transform.LocalPosition = position;
   staticMesh->transform.LocalScale = scale;

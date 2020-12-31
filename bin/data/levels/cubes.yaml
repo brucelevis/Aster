@@ -6,9 +6,8 @@ engine:
 
 application:
   meshes:
-    - name: cube
-      mesh_file: ../data/meshes/cube/cube.obj
-      texture_file: ../data/meshes/cube/cube.jpg
+    - name: backpack
+      mesh_file: ../data/meshes/backpack/backpack.obj
 
   entities:
     - components:
@@ -19,34 +18,8 @@ application:
          zFar: 100.0
 
     - components:
-       - type: root
-         position: [3.0, 1.0, -15.0]
-         scale: [1.0, 1.0, 1.0]
-
-       - type: static_mesh
-         mesh: cube
-         position: [0.0, 0.0, 0.0]
-         scale: [1.0, 1.0, 1.0]
-         attach_to_root: yes
-
-    - components:
-       - type: root
-         position: [1.0, -4.0, -20.0]
-         scale: [1.0, 1.0, 1.0]
-
-       - type: static_mesh
-         mesh: cube
-         position: [0.0, 0.0, 0.0]
-         scale: [1.0, 1.0, 1.0]
-         attach_to_root: yes
-
-    - components:
-       - type: root
-         position: [0.0, 5.0, 0]
-         scale: [50.0, 1.0, 50.0]
-
-       - type: static_mesh
-         mesh: cube
-         position: [0.0, 0.0, 0.0]
-         scale: [1.0, 1.0, 1.0]
-         attach_to_root: yes
+      - type: static_mesh
+        mesh: backpack
+        position: [0.0, 0.0, -5.0]
+        scale: [1.0, 1.0, 1.0]
+        attach_to_root: false
