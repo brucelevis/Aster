@@ -9,137 +9,166 @@
 #include <stack>
 #include <optional>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-
+#define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image/stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+// #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+#include <tinygltf/tiny_gltf.h>
 
 namespace
 {
-  const std::string DefaultTextureFile = "../data/meshes/default/default.jpg";
-
   inline std::string GetFolderPath(const std::string& filePath)
   {
     return filePath.substr(0, filePath.find_last_of("\\/"));
-  }
-
-  inline glm::vec3 AiVec3dToGlm(const aiVector3D& vec)
-  {
-    return glm::vec3{ vec.x, vec.y, vec.z };
-  }
-
-  inline glm::vec2 AiVec3dToGlm2D(const aiVector3D& vec)
-  {
-    return glm::vec2{ vec.x, vec.y};
-  }
-
-
-  struct TextureFiles
-  {
-    std::optional<std::string> color;
-    std::optional<std::string> metallic;
-    std::optional<std::string> rougness;
-    std::optional<std::string> normals;
-  };
-
-  std::tuple<std::vector<StaticMesh::Vertex>, std::vector<uint32_t>, TextureFiles> GatherMeshData(aiMesh* mesh, aiMaterial* material, const std::string& meshFileDir)
-  {
-    std::vector<StaticMesh::Vertex> vertices;
-    vertices.reserve(mesh->mNumVertices);
-
-    for (int nVertex = 0; nVertex < mesh->mNumVertices; ++nVertex)
-    {
-      vertices.push_back(StaticMesh::Vertex{
-        AiVec3dToGlm(mesh->mVertices[nVertex]),
-        AiVec3dToGlm(mesh->mNormals[nVertex]),
-        AiVec3dToGlm2D(mesh->mTextureCoords[0][nVertex])
-        });
-    }
-
-    std::vector<uint32_t> indices;
-    indices.reserve(mesh->mNumFaces * 3);
-
-    for (int nFace = 0; nFace < mesh->mNumFaces; ++nFace)
-    {
-      indices.push_back({
-        mesh->mFaces[nFace].mIndices[0]
-        });
-      indices.push_back({
-        mesh->mFaces[nFace].mIndices[1]
-        });
-      indices.push_back({
-        mesh->mFaces[nFace].mIndices[2]
-        });
-    }
-
-    TextureFiles textureFiles;
-
-    auto getTexture = [&](aiTextureType type) -> std::optional<std::string>
-    {
-      if (material->GetTextureCount(type) != 0)
-      {
-        aiString path;
-        if (material->GetTexture(type, 0, &path))
-          return std::nullopt;
-
-        return meshFileDir + "/" + std::string(path.C_Str(), path.length);
-      }
-
-      return std::nullopt;
-    };
-
-    textureFiles.color = getTexture(aiTextureType::aiTextureType_BASE_COLOR);
-    // let's try non pbr texture
-    if (textureFiles.color.has_value() == false)
-      textureFiles.color = getTexture(aiTextureType::aiTextureType_DIFFUSE);
-
-    textureFiles.metallic = getTexture(aiTextureType::aiTextureType_METALNESS);
-    textureFiles.rougness = getTexture(aiTextureType::aiTextureType_DIFFUSE_ROUGHNESS);
-    textureFiles.normals = getTexture(aiTextureType::aiTextureType_NORMALS);
-
-    return { vertices, indices, textureFiles };
   }
 }
 
 AssetStorage::AssetStorage(Core& vkCore)
   : vkCore(vkCore)
 {
-  LoadTexture(DefaultTextureFile);
+
 }
 
 StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string& modelName)
 {
   StaticModel staticModel;
+  const std::string fileFolder = GetFolderPath(file);
 
-  Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs);
+  tinygltf::Model model;
+  tinygltf::TinyGLTF loader;
+  std::string err;
+  std::string warn;
 
-  if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
-    throw std::runtime_error(importer.GetErrorString());
+  bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, file.c_str());
+  //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
 
-  std::stack<aiNode*> aiNodesToProcess;
-  aiNodesToProcess.push(scene->mRootNode);
+  if (!warn.empty()) {
+    printf("Warn: %s\n", warn.c_str());
+  }
 
-  while (!aiNodesToProcess.empty())
+  if (!err.empty()) {
+    printf("Err: %s\n", err.c_str());
+  }
+
+  if (!ret) {
+    throw std::runtime_error("Failed to parse glTF");
+  }
+
+  for (const tinygltf::Image& imgSource : model.images)
   {
-    aiNode* node = aiNodesToProcess.top();
-    aiNodesToProcess.pop();
+    if (imgSource.component != 4 || imgSource.pixel_type != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
+      throw std::runtime_error("only ub rgba textures are supported.");
 
-    for (int i = 0; i < node->mNumChildren; ++i)
-      aiNodesToProcess.push(node->mChildren[i]);
+    const vk::Extent2D imgExtent{ static_cast<uint32_t>(imgSource.width) , static_cast<uint32_t>(imgSource.height) };
+    const int pixelSize = imgSource.component;
+    const vk::DeviceSize srcSize = pixelSize * imgSource.width * imgSource.height;
+    const void* src = reinterpret_cast<const void*>(imgSource.image.data());
 
-    for (int i = 0; i < node->mNumMeshes; ++i)
+    Image img = vkCore.Allocate2DImage(src, srcSize, vk::Format::eR8G8B8A8Unorm, imgExtent, vk::ImageUsageFlagBits::eSampled);
+
+    textures.insert({ fileFolder + "/" + imgSource.uri, std::move(img) });
+  }
+
+  for (tinygltf::Mesh mesh : model.meshes)
+  {
+    std::vector<StaticMesh::Vertex> vertices;
+    std::vector<uint32_t> indices;
+
+    for (tinygltf::Primitive primitive : mesh.primitives)
     {
-      aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-      aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+      if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
+        throw std::runtime_error("unsupported primitive type.");
 
-      auto [staticMesh, meshMaterial] = ProcessMesh(mesh, mat, GetFolderPath(file));
+      const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.at("POSITION")];
+      const tinygltf::BufferView& posBufferView = model.bufferViews[posAccessor.bufferView];
+      const float* posBuffer = reinterpret_cast<float*>(model.buffers[posBufferView.buffer].data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
+      const int posStride = posAccessor.ByteStride(posBufferView) / sizeof(float);
 
-      staticModel.meshes.push_back(std::move(staticMesh));
-      staticModel.materials.push_back(meshMaterial);
+      const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
+      const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
+      const float* normalBuffer = reinterpret_cast<float*>(model.buffers[normalBufferView.buffer].data.data() + normalBufferView.byteOffset + normalAccessor.byteOffset);
+      const int normalStride = normalAccessor.ByteStride(normalBufferView) / sizeof(float);
+
+      const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
+      const tinygltf::BufferView& uvBufferView = model.bufferViews[uvAccessor.bufferView];
+      const float* uvBuffer = reinterpret_cast<float*>(model.buffers[uvBufferView.buffer].data.data() + uvBufferView.byteOffset + uvAccessor.byteOffset);
+      const int uvStride = uvAccessor.ByteStride(uvBufferView) / sizeof(float);
+
+      const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
+      const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
+      const void* indexBuffer = reinterpret_cast<void*>(model.buffers[indexBufferView.buffer].data.data() + indexBufferView.byteOffset + indexAccessor.byteOffset);
+      const int indexStride = indexAccessor.ByteStride(indexBufferView);
+
+      if (posStride <= 0 || normalStride <= 0 || uvStride <= 0 || indexStride <= 0)
+        throw std::runtime_error("failed to calculate data stride.");
+
+      for (int i = 0; i < posAccessor.count; ++i)
+      {
+        vertices.push_back({
+          glm::vec3{ posBuffer[i * posStride + 0], posBuffer[i * posStride + 1], posBuffer[i * posStride + 2]},
+          glm::vec3{ normalBuffer[i * normalStride + 0], normalBuffer[i * normalStride + 1], normalBuffer[i * normalStride + 2]},
+          glm::vec2{ uvBuffer[i * uvStride + 0], uvBuffer[i * uvStride + 1]},
+        });
+      }
+
+      for (int i = 0; i < indexAccessor.count; ++i)
+      {
+        uint32_t index = 0;
+        switch (indexAccessor.componentType)
+        {
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+        {
+          const unsigned char* buf = reinterpret_cast<const unsigned char*>(indexBuffer);
+          index = buf[i];
+          break;
+        }
+
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+        {
+          const unsigned short* buf = reinterpret_cast<const unsigned short*>(indexBuffer);
+          index = buf[i];
+          break;
+        }
+
+        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+        {
+          const unsigned int* buf = reinterpret_cast<const unsigned int*>(indexBuffer);
+          index = buf[i];
+          break;
+        }
+
+        default:
+          throw std::runtime_error("unsupported index type.");
+        }
+
+        indices.push_back(index);
+      }
     }
+
+    Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
+    Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
+
+    staticModel.meshes.push_back(
+      StaticMesh{
+        std::move(vertexBuffer),
+        std::move(indexBuffer),
+        static_cast<uint32_t>(indices.size())
+      }
+    );
+
+    Material material;
+    tinygltf::Material& gltfMaterial = model.materials[0];
+
+    const std::string colorTextureName = fileFolder + "/" + model.images[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index].uri;
+    material.colorTexture = &textures.at(colorTextureName);
+
+    const std::string metallicRoughnessTextureName = fileFolder + "/" + model.images[gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index].uri;
+    material.metallicRoughnessTexture = &textures.at(metallicRoughnessTextureName);
+
+    const std::string normalTextureName = fileFolder + "/" + model.images[gltfMaterial.normalTexture.index].uri;
+    material.normalTexture = &textures.at(normalTextureName);
+
+    staticModel.materials.push_back(material);
   }
 
   staticModels.insert({
@@ -148,64 +177,4 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
   });
 
   return &staticModels.at(modelName);
-}
-
-std::tuple<StaticMesh, Material> AssetStorage::ProcessMesh(aiMesh* mesh, aiMaterial* mat, const std::string& meshFileDir)
-{
-  auto [vertices, indices, textureFiles] = GatherMeshData(mesh, mat, meshFileDir);
-
-  Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
-  Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
-
-  StaticMesh staticMesh{
-      std::move(vertexBuffer),
-      std::move(indexBuffer),
-      static_cast<uint32_t>(indices.size())
-  };
-
-  Material meshMaterial;
-  meshMaterial.colorTexture = GetTexture(textureFiles.color.value_or(DefaultTextureFile));
-  meshMaterial.metallicTexture = GetTexture(textureFiles.metallic.value_or(DefaultTextureFile));
-  meshMaterial.roughnessTexture = GetTexture(textureFiles.rougness.value_or(DefaultTextureFile));
-  meshMaterial.normalsTexture = GetTexture(textureFiles.normals.value_or(DefaultTextureFile));
-
-  return { std::move(staticMesh), meshMaterial };
-}
-
-Image* AssetStorage::LoadTexture(const std::string& textureFile)
-{
-  int x, y, n;
-  int channels_in_file;
-  int force_rgba = 4;
-
-  stbi_uc* uc = stbi_load(textureFile.c_str(), &x, &y, &channels_in_file, force_rgba);
-  assert(uc);
-
-  struct stbiDeleter
-  {
-    inline void operator()(void* img)
-    {
-      stbi_image_free(img);
-    }
-  };
-
-  std::unique_ptr<void, stbiDeleter> src(
-    reinterpret_cast<void*>(uc)
-  );
-
-  Image img = vkCore.Allocate2DImage(src.get(), x* y* (1 * 4), vk::Format::eR8G8B8A8Unorm, vk::Extent2D{ static_cast<uint32_t>(x),static_cast<uint32_t>(y) }, vk::ImageUsageFlagBits::eSampled);
-
-  textures.insert({ textureFile, std::move(img) });
-
-  return &textures.at(textureFile);
-}
-
-Image* AssetStorage::GetTexture(const std::string& textureFile)
-{
-  auto it = textures.find(textureFile);
-
-  if (it != textures.end())
-    return &it->second;
-
-  return LoadTexture(textureFile);
 }

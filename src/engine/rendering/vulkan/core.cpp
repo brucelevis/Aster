@@ -402,7 +402,7 @@ Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsa
   return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usage, vk::ImageAspectFlagBits::eColor);
 }
 
-Image Core::Allocate2DImage(void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
+Image Core::Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
 {
   HostBuffer hostBuffer = AllocateHostBuffer(size, vk::BufferUsageFlagBits::eTransferSrc);
   hostBuffer.UploadMemory(src, size, 0);

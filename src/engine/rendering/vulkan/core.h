@@ -62,7 +62,7 @@ public:
 
   Image Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
 
-  Image Allocate2DImage(void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
+  Image Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
 
   Image AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent);
 

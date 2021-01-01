@@ -15,12 +15,10 @@ set(GLM_DEP_DIR "${DEP_DIR}/glm")
 set(SPIRV_DEP_DIR "${DEP_DIR}/spirv_cross")
 set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set(YAML_CPP_DEP_DIR "${DEP_DIR}/yaml-cpp")
-set(STB_IMAGE_DEP_DIR "${DEP_DIR}/stb_image")
-set(ASSIMP_DEP_DIR "${DEP_DIR}/assimp")
 
 file(GLOB_RECURSE ASTER_SOURCES "${CMAKE_SOURCE_DIR}/src/application/*.cpp" "${CMAKE_SOURCE_DIR}/src/application/*.h" "${CMAKE_SOURCE_DIR}/src/application/*.hpp")
 
-set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib" "${ASSIMP_DEP_DIR}/lib/assimp-vc142-mtd.lib")
+set (DEP_LIBRARIES "${GLFW_DEP_DIR}/glfw3.lib" "${Vulkan_LIBRARIES}" "${YAML_CPP_DEP_DIR}/lib/yaml-cppd.lib")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/src"
@@ -43,12 +41,3 @@ set_target_properties(ASTER_EXE PROPERTIES
                         VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/Debug")
 
 target_link_libraries(ASTER_EXE ${DEP_LIBRARIES} ENGINE_LIB ECS_LIB) 
-
-add_custom_command(
-        TARGET ASTER_EXE POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${ASSIMP_DEP_DIR}/dll/assimp-vc142-mtd.dll
-                ${RUNTIME_OUTPUT_DIRECTORY}/Release/assimp-vc142-mtd.dll
-        COMMAND ${CMAKE_COMMAND} -E copy
-                ${ASSIMP_DEP_DIR}/dll/assimp-vc142-mtd.dll
-                ${RUNTIME_OUTPUT_DIRECTORY}/Debug/assimp-vc142-mtd.dll)

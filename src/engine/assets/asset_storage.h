@@ -29,11 +29,6 @@ public:
   StaticModel* LoadModel(const std::string& file, const std::string& modelName);
 
 private:
-  std::tuple<StaticMesh, Material> ProcessMesh(aiMesh* mesh, aiMaterial* mat, const std::string& meshFileDir);
-  Image* LoadTexture(const std::string& textureFile);
-  Image* GetTexture(const std::string& textureFile);
-
-private:
   Core& vkCore;
 
   std::unordered_map<std::string, StaticModel> staticModels;

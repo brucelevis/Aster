@@ -22,9 +22,8 @@ struct StaticMesh
 struct Material
 {
   Image* colorTexture = nullptr;
-  Image* metallicTexture = nullptr;
-  Image* roughnessTexture = nullptr;
-  Image* normalsTexture = nullptr;
+  Image* metallicRoughnessTexture = nullptr;
+  Image* normalTexture = nullptr;
 };
 
 struct StaticModel
