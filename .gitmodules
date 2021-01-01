@@ -1,3 +1,6 @@
 [submodule "dependency/ecs"]
 	path = dependency/ecs
 	url = https://github.com/Rewlion/ECS
+[submodule "bin/data/meshes/gltf-samples"]
+	path = bin/data/meshes/gltf-samples
+	url = https://github.com/KhronosGroup/glTF-Sample-Models

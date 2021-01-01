@@ -114,7 +114,7 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
   StaticModel staticModel;
 
   Assimp::Importer importer;
-  const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_GenNormals);
+  const aiScene* scene = importer.ReadFile(file, aiProcess_Triangulate | aiProcess_GenNormals | aiProcess_FlipUVs);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     throw std::runtime_error(importer.GetErrorString());
