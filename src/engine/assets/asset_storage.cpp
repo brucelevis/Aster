@@ -21,6 +21,31 @@ namespace
   {
     return filePath.substr(0, filePath.find_last_of("\\/"));
   }
+
+  enum class AttributeType
+  {
+    Index,
+    Position,
+    UV,
+    Normal
+  };
+
+  inline std::string GetTypeString(AttributeType type)
+  {
+    switch (type)
+    {
+      case AttributeType::Index:
+        return "__INDEX";
+      case AttributeType::Position:
+        return "POSITION";
+      case AttributeType::UV:
+        return "TEXCOORD_0";
+      case AttributeType::Normal:
+        return "NORMAL";
+      default:
+        return "UNKNOWN";
+    }
+  }
 }
 
 AssetStorage::AssetStorage(Core& vkCore)
@@ -29,10 +54,106 @@ AssetStorage::AssetStorage(Core& vkCore)
 
 }
 
+class AttributeAccessor
+{
+public:
+
+  AttributeAccessor(const tinygltf::Model& model, const tinygltf::Primitive& primitive, AttributeType type)
+  {
+    const int accessorIndex = type == AttributeType::Index 
+                                   ? primitive.indices 
+                                   : primitive.attributes.at(GetTypeString(type));
+
+    const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
+
+    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+
+    componentType = accessor.componentType;
+
+    buf = reinterpret_cast<const float*>(model.buffers[bufferView.buffer].data.data() + bufferView.byteOffset + accessor.byteOffset);
+
+    stride = accessor.ByteStride(bufferView);
+    if (stride == -1)
+      throw std::runtime_error("failed to calculate stride.");
+
+    byteOffset = accessor.byteOffset + bufferView.byteOffset;
+
+    count = accessor.count;
+
+    i = 0;
+  }
+
+  AttributeAccessor(int componentType, const float* buf, int stride, int byteOffset, int count, int i)
+    : componentType(componentType)
+    , buf(buf)
+    , stride(stride)
+    , byteOffset(byteOffset)
+    , count(count)
+    , i(i)
+  {
+  }
+
+  inline int GetCount() const
+  {
+    return count;
+  }
+
+  AttributeAccessor operator++(int)
+  {
+    AttributeAccessor it{ componentType, buf, stride, byteOffset,count,i };
+    ++i;
+
+    return it;
+  }
+
+  operator glm::vec3() const
+  {
+    const int typedStride = stride / sizeof(float);
+    return glm::vec3{ buf[i * typedStride + 0], buf[i * typedStride + 1], buf[i * typedStride + 2] };
+  }
+
+  operator glm::vec2() const
+  {
+    const int typedStride = stride / sizeof(float);
+    return glm::vec2{ buf[i * typedStride + 0], buf[i * typedStride + 1]};
+  }
+
+  operator uint32_t() const
+  {
+    switch (componentType)
+    {
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+    {
+      return reinterpret_cast<const unsigned char*>(buf)[i];
+    }
+
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+    {
+      return reinterpret_cast<const unsigned short*>(buf)[i];
+    }
+
+    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+    {
+      return reinterpret_cast<const unsigned int*>(buf)[i];
+    }
+
+    default:
+      throw std::runtime_error("unsupported index type.");
+    }
+  }
+
+private:
+  int componentType;
+  const float* buf;
+  int stride;
+  int byteOffset;
+  int count;
+  int i;
+};
+
 StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string& modelName)
 {
-  StaticModel staticModel;
-  const std::string fileFolder = GetFolderPath(file);
+  const std::string rootUri = GetFolderPath(file);
 
   tinygltf::Model model;
   tinygltf::TinyGLTF loader;
@@ -40,7 +161,6 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
   std::string warn;
 
   bool ret = loader.LoadASCIIFromFile(&model, &err, &warn, file.c_str());
-  //bool ret = loader.LoadBinaryFromFile(&model, &err, &warn, argv[1]); // for binary glTF(.glb)
 
   if (!warn.empty()) {
     printf("Warn: %s\n", warn.c_str());
@@ -54,6 +174,16 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
     throw std::runtime_error("Failed to parse glTF");
   }
 
+  LoadAllTextures(model, rootUri);
+
+  StaticModel staticModel = ProcessModel(model, rootUri);
+  staticModels.insert({ modelName, std::move(staticModel) });
+
+  return &staticModels.at(modelName);
+}
+
+void AssetStorage::LoadAllTextures(const tinygltf::Model& model, const std::string& rootUri)
+{
   for (const tinygltf::Image& imgSource : model.images)
   {
     if (imgSource.component != 4 || imgSource.pixel_type != TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE)
@@ -66,8 +196,13 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
 
     Image img = vkCore.Allocate2DImage(src, srcSize, vk::Format::eR8G8B8A8Unorm, imgExtent, vk::ImageUsageFlagBits::eSampled);
 
-    textures.insert({ fileFolder + "/" + imgSource.uri, std::move(img) });
+    textures.insert({ rootUri + "/" + imgSource.uri, std::move(img) });
   }
+}
+
+StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::string& rootUri)
+{
+  StaticModel staticModel;
 
   for (tinygltf::Mesh mesh : model.meshes)
   {
@@ -79,74 +214,38 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
       if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
         throw std::runtime_error("unsupported primitive type.");
 
-      const tinygltf::Accessor& posAccessor = model.accessors[primitive.attributes.at("POSITION")];
-      const tinygltf::BufferView& posBufferView = model.bufferViews[posAccessor.bufferView];
-      const float* posBuffer = reinterpret_cast<float*>(model.buffers[posBufferView.buffer].data.data() + posBufferView.byteOffset + posAccessor.byteOffset);
-      const int posStride = posAccessor.ByteStride(posBufferView) / sizeof(float);
+      AttributeAccessor posAccessor(model, primitive, AttributeType::Position);
+      AttributeAccessor normalAccessor(model, primitive, AttributeType::Normal);
+      AttributeAccessor uvAccessor(model, primitive, AttributeType::UV);
+      AttributeAccessor indexAccessor(model, primitive, AttributeType::Index);
 
-      const tinygltf::Accessor& normalAccessor = model.accessors[primitive.attributes.at("NORMAL")];
-      const tinygltf::BufferView& normalBufferView = model.bufferViews[normalAccessor.bufferView];
-      const float* normalBuffer = reinterpret_cast<float*>(model.buffers[normalBufferView.buffer].data.data() + normalBufferView.byteOffset + normalAccessor.byteOffset);
-      const int normalStride = normalAccessor.ByteStride(normalBufferView) / sizeof(float);
-
-      const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.at("TEXCOORD_0")];
-      const tinygltf::BufferView& uvBufferView = model.bufferViews[uvAccessor.bufferView];
-      const float* uvBuffer = reinterpret_cast<float*>(model.buffers[uvBufferView.buffer].data.data() + uvBufferView.byteOffset + uvAccessor.byteOffset);
-      const int uvStride = uvAccessor.ByteStride(uvBufferView) / sizeof(float);
-
-      const tinygltf::Accessor& indexAccessor = model.accessors[primitive.indices];
-      const tinygltf::BufferView& indexBufferView = model.bufferViews[indexAccessor.bufferView];
-      const void* indexBuffer = reinterpret_cast<void*>(model.buffers[indexBufferView.buffer].data.data() + indexBufferView.byteOffset + indexAccessor.byteOffset);
-      const int indexStride = indexAccessor.ByteStride(indexBufferView);
-
-      if (posStride <= 0 || normalStride <= 0 || uvStride <= 0 || indexStride <= 0)
-        throw std::runtime_error("failed to calculate data stride.");
-
-      for (int i = 0; i < posAccessor.count; ++i)
+      for (int i = 0; i < posAccessor.GetCount(); ++i)
       {
         vertices.push_back({
-          glm::vec3{ posBuffer[i * posStride + 0], posBuffer[i * posStride + 1], posBuffer[i * posStride + 2]},
-          glm::vec3{ normalBuffer[i * normalStride + 0], normalBuffer[i * normalStride + 1], normalBuffer[i * normalStride + 2]},
-          glm::vec2{ uvBuffer[i * uvStride + 0], uvBuffer[i * uvStride + 1]},
-        });
+          posAccessor++,
+          normalAccessor++,
+          uvAccessor++,
+          });
       }
 
-      for (int i = 0; i < indexAccessor.count; ++i)
-      {
-        uint32_t index = 0;
-        switch (indexAccessor.componentType)
-        {
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-        {
-          const unsigned char* buf = reinterpret_cast<const unsigned char*>(indexBuffer);
-          index = buf[i];
-          break;
-        }
-
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-        {
-          const unsigned short* buf = reinterpret_cast<const unsigned short*>(indexBuffer);
-          index = buf[i];
-          break;
-        }
-
-        case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-        {
-          const unsigned int* buf = reinterpret_cast<const unsigned int*>(indexBuffer);
-          index = buf[i];
-          break;
-        }
-
-        default:
-          throw std::runtime_error("unsupported index type.");
-        }
-
-        indices.push_back(index);
-      }
+      for (int i = 0; i < indexAccessor.GetCount(); ++i)
+        indices.push_back(indexAccessor++);
     }
 
     Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
     Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
+
+    Material material;
+    const tinygltf::Material& gltfMaterial = model.materials[0];
+
+    const std::string colorTextureName = rootUri + "/" + model.images[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index].uri;
+    material.colorTexture = &textures.at(colorTextureName);
+
+    const std::string metallicRoughnessTextureName = rootUri + "/" + model.images[gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index].uri;
+    material.metallicRoughnessTexture = &textures.at(metallicRoughnessTextureName);
+
+    const std::string normalTextureName = rootUri + "/" + model.images[gltfMaterial.normalTexture.index].uri;
+    material.normalTexture = &textures.at(normalTextureName);
 
     staticModel.meshes.push_back(
       StaticMesh{
@@ -155,26 +254,8 @@ StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string&
         static_cast<uint32_t>(indices.size())
       }
     );
-
-    Material material;
-    tinygltf::Material& gltfMaterial = model.materials[0];
-
-    const std::string colorTextureName = fileFolder + "/" + model.images[gltfMaterial.pbrMetallicRoughness.baseColorTexture.index].uri;
-    material.colorTexture = &textures.at(colorTextureName);
-
-    const std::string metallicRoughnessTextureName = fileFolder + "/" + model.images[gltfMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index].uri;
-    material.metallicRoughnessTexture = &textures.at(metallicRoughnessTextureName);
-
-    const std::string normalTextureName = fileFolder + "/" + model.images[gltfMaterial.normalTexture.index].uri;
-    material.normalTexture = &textures.at(normalTextureName);
-
     staticModel.materials.push_back(material);
   }
 
-  staticModels.insert({
-    modelName,
-    std::move(staticModel)
-  });
-
-  return &staticModels.at(modelName);
+  return std::move(staticModel);
 }

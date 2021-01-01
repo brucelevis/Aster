@@ -8,8 +8,10 @@
 #include <tuple>
 
 class Core;
-struct aiMesh;
-struct aiMaterial;
+namespace tinygltf
+{
+  class Model;
+}
 
 class AssetStorage
 {
@@ -27,6 +29,10 @@ public:
   }
 
   StaticModel* LoadModel(const std::string& file, const std::string& modelName);
+
+private:
+  void LoadAllTextures(const tinygltf::Model& model, const std::string& rootUri);
+  StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::string& rootUri);
 
 private:
   Core& vkCore;
