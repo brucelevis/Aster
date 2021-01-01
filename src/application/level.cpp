@@ -9,6 +9,44 @@
 
 #include <yaml-cpp/yaml.h>
 
+namespace
+{
+  template<class T>
+  T GetValueOrDefault(const YAML::Node& node, const std::string& name, T defaultValue)
+  {
+    const YAML::Node& valueNode = node[name];
+    if (valueNode)
+      return valueNode.as<T>();
+
+    return defaultValue;
+  }
+
+  glm::vec3 GetVec3OrDefault(const YAML::Node& node, const std::string& name, glm::vec3 defaultValue)
+  {
+    const YAML::Node& valueNode = node[name];
+    if (valueNode)
+    {
+      if (valueNode.size() != 3)
+        throw std::runtime_error("GetVec3orDefault: node size != 3");
+
+      return glm::vec3{
+        valueNode[0].as<float>(),
+        valueNode[1].as<float>(),
+        valueNode[2].as<float>(),
+      };
+    }
+
+    return defaultValue;
+  }
+  
+  glm::quat EulerToQuat(const glm::vec3& angles)
+  {
+    return glm::angleAxis(glm::radians(angles.z), glm::vec3{ 0.0f, 0.0f, 1.0f })
+         * glm::angleAxis(glm::radians(angles.y), glm::vec3{ 0.0f, 1.0f, 0.0f })
+         * glm::angleAxis(glm::radians(angles.x), glm::vec3{ 1.0f, 0.0f, 0.0f });
+  }
+}
+
 LevelInitializationSystem::LevelInitializationSystem(Context* pContext, const YAML::Node& levelYaml)
   : InitializationSystem(pContext)
   , levelYaml(levelYaml)
@@ -72,27 +110,21 @@ void LevelInitializationSystem::AddComponentToEntity(Entity* entity, const YAML:
 void LevelInitializationSystem::AddStaticMeshComponentToEntity(Entity* entity, const YAML::Node& componentDescription)
 {
   const std::string meshName = componentDescription["mesh"].as<std::string>();
-  const glm::vec3 position = {
-    componentDescription["position"][0].as<float>(),
-    componentDescription["position"][1].as<float>(),
-    componentDescription["position"][2].as<float>(),
-  };
-  const glm::vec3 scale = {
-    componentDescription["scale"][0].as<float>(),
-    componentDescription["scale"][1].as<float>(),
-    componentDescription["scale"][2].as<float>(),
-  };
 
-  const bool isAttachedToRootComponent = componentDescription["attach_to_root"].as<bool>();
+  const glm::vec3 position = GetVec3OrDefault(componentDescription, "position", { 0.0, 0.0, 0.0 });
+  const glm::vec3 scale = GetVec3OrDefault(componentDescription, "scale", { 1.0, 1.0, 1.0 });
+  const glm::vec3 rotation = GetVec3OrDefault(componentDescription, "rotation", { 0.0, 0.0, 0.0 });
+
+  const bool isAttachedToRootComponent = GetValueOrDefault(componentDescription, "attach_to_root", false);
 
   AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
 
   StaticMeshComponent* staticMesh = entity->AddComponent<StaticMeshComponent>("Static Mesh");
   staticMesh->model = as->GetStaticModel(meshName);
-  
+
   staticMesh->transform.LocalPosition = position;
   staticMesh->transform.LocalScale = scale;
-  staticMesh->transform.LocalRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+  staticMesh->transform.LocalRotation = EulerToQuat(rotation);
 
   if (isAttachedToRootComponent)
   {
@@ -103,39 +135,29 @@ void LevelInitializationSystem::AddStaticMeshComponentToEntity(Entity* entity, c
 
 void LevelInitializationSystem::AddRootComponentToEntity(Entity* entity, const YAML::Node& componentDescription)
 {
-  const glm::vec3 position = {
-    componentDescription["position"][0].as<float>(),
-    componentDescription["position"][1].as<float>(),
-    componentDescription["position"][2].as<float>(),
-  };
-  const glm::vec3 scale = {
-    componentDescription["scale"][0].as<float>(),
-    componentDescription["scale"][1].as<float>(),
-    componentDescription["scale"][2].as<float>(),
-  };
+  const glm::vec3 position = GetVec3OrDefault(componentDescription, "position", { 0.0, 0.0, 0.0 });
+  const glm::vec3 scale = GetVec3OrDefault(componentDescription, "scale", { 1.0, 1.0, 1.0 });
+  const glm::vec3 rotation = GetVec3OrDefault(componentDescription, "rotation", { 0.0, 0.0, 0.0 });
 
   RootComponent* root = entity->AddComponent<RootComponent>("Root Component");
   root->transform.LocalPosition = position;
   root->transform.LocalScale = scale;
-  root->transform.LocalRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+  root->transform.LocalRotation = EulerToQuat(rotation);
 }
 
 void LevelInitializationSystem::AddCameraComponentToEntity(Entity* entity, const YAML::Node& componentDescription)
 {
   Engine::Settings engineSettings = pContext->GetUserData<Engine*>()->GetSettings();
 
-  const glm::vec3 position = {
-    componentDescription["position"][0].as<float>(),
-    componentDescription["position"][1].as<float>(),
-    componentDescription["position"][2].as<float>(),
-  };
+  const glm::vec3 position = GetVec3OrDefault(componentDescription, "position", { 0.0, 0.0, 0.0 });
+  const glm::vec3 rotation = GetVec3OrDefault(componentDescription, "rotation", { 0.0, 0.0, 0.0 });
   const float fov = componentDescription["fov"].as<float>();
   const float zNear = componentDescription["zNear"].as<float>();
   const float zFar = componentDescription["zFar"].as<float>();
 
   CameraComponent* camera = entity->AddComponent<CameraComponent>("Camera Component");
   camera->transform.LocalPosition = position;
-  camera->transform.LocalRotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+  camera->transform.LocalRotation = EulerToQuat(rotation);
   camera->angle = glm::radians(fov);
   camera->width = engineSettings.window.width;
   camera->height = engineSettings.window.height;

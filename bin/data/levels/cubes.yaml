@@ -21,5 +21,5 @@ application:
       - type: static_mesh
         mesh: damaged_helmet
         position: [0.0, 0.0, -5.0]
+        rotation: [-90.0, 180, 0.0]
         scale: [1.0, 1.0, 1.0]
-        attach_to_root: false
