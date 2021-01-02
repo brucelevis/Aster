@@ -48,11 +48,6 @@ void UniformsAccessor::SetSampler2D(const UniformName& name, const Image& img)
 {
   auto [setBinding, _, dscSet] = AccessDescriptorSet(name, UniformType::Sampler2D);
 
-  const auto descriptorImageInfo = vk::DescriptorImageInfo()
-    .setSampler(img.GetSampler())
-    .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
-    .setImageView(img.GetView());
-
   writes[setBinding] = vk::WriteDescriptorSet()
     .setDescriptorCount(1)
     .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
@@ -60,6 +55,19 @@ void UniformsAccessor::SetSampler2D(const UniformName& name, const Image& img)
     .setDstBinding(setBinding.binding)
     .setDstSet(dscSet)
     .setPImageInfo(&img.GetDescriptorImageInfo());
+}
+
+void UniformsAccessor::SetSubpassInput(const UniformName& name, const ImageView& view)
+{
+  auto [setBinding, _, dscSet] = AccessDescriptorSet(name, UniformType::SubpassInput);
+
+  writes[setBinding] = vk::WriteDescriptorSet()
+    .setDescriptorCount(1)
+    .setDescriptorType(vk::DescriptorType::eInputAttachment)
+    .setDstArrayElement(0)
+    .setDstBinding(setBinding.binding)
+    .setDstSet(dscSet)
+    .setPImageInfo(&view.GetDescriptorImageInfo());
 }
 
 std::vector<vk::DescriptorSet> UniformsAccessor::GetUpdatedDescriptorSets()

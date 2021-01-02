@@ -10,6 +10,7 @@ enum class UniformType
   None,
   UniformBuffer,
   Sampler2D,
+  SubpassInput,
 };
 
 typedef unsigned int ShaderStages;

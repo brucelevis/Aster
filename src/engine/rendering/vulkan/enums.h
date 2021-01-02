@@ -6,6 +6,6 @@ enum class ImageType
   DepthOnlyAttachment,
   StencilOnlyAttachment,
   DepthStencilAttachment,
-  InputAttachment,
+  SubpassInput,
   OutputColorAttachment
 };

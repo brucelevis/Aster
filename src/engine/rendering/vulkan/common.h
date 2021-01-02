@@ -1,6 +1,7 @@
 #pragma once
 
 #include "enums.h"
+#include "image.h"
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
@@ -13,7 +14,7 @@ struct ImageAttachment
 {
   ResourceId id;
   vk::Format format;
-  vk::ImageView view;
+  ImageView view;
   ImageType type;
   vk::ImageLayout initialLayout;
   vk::ImageLayout finalLayout;

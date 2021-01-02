@@ -25,7 +25,7 @@ typedef unsigned int AttachmentId;
 
 #define BACKBUFFER_RESOURCE_ID ResourceId("__backbuffer_resource")
 
-struct InputAttachment
+struct SubpassInput
 {
   ResourceId id;
   vk::ImageLayout layout;
@@ -57,7 +57,7 @@ class RenderSubpass
 public:
   RenderSubpass(unsigned int id);
 
-  RenderSubpass& AddInputAttachment(const InputAttachment& desc);
+  RenderSubpass& AddInputAttachment(const SubpassInput& desc);
 
   RenderSubpass& AddInputSampler();
 
@@ -80,7 +80,7 @@ public:
 private:
   const unsigned int id;
   RenderPassExecutionFunction renderCallback;
-  std::vector<InputAttachment> inputAttachments;
+  std::vector<SubpassInput> inputAttachments;
   std::vector<ResourceId> outputColorAttachments;
 
   std::vector<ImageAttachment> imageAttachmentCreateInfos;
@@ -125,6 +125,8 @@ public:
   void Reset();
 
   void Execute();
+
+  const ImageView& GetImageView(const ResourceId& id) const;
 private:
   std::vector<vk::SubpassDependency> GetAttachmentDependencies();
 

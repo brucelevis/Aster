@@ -106,7 +106,7 @@ public:
     this->presentQueue = presentQueue;
   }
 
-  vk::ImageView AcquireNextImage(vk::Semaphore semaphore)
+  ImageView AcquireNextImage(vk::Semaphore semaphore)
   {
     acquiredImageIndex = logicalDevice.acquireNextImageKHR(*swapchain, -1, semaphore, nullptr).value;
 

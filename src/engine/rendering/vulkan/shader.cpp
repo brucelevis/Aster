@@ -15,6 +15,9 @@ namespace
     case UniformType::Sampler2D:
       return vk::DescriptorType::eCombinedImageSampler;
 
+    case UniformType::SubpassInput:
+      return vk::DescriptorType::eInputAttachment;
+
     default:
       throw std::runtime_error("unknown uniform type.");
     }

@@ -191,5 +191,20 @@ PipelineUniforms SpirvParser::ParseShader(const std::vector<uint32_t>& byteCode)
     uniforms.AddUniform(set, binding, sampler.name, description);
   }
 
+  for (const auto& subpassInput : resources.subpass_inputs)
+  {
+    spirv_cross::SPIRType type = glsl.get_type(subpassInput.type_id);
+
+    UniformBindingDescription description;
+    description.size = 0;
+    description.stages = stage;
+    description.type = UniformType::SubpassInput;
+
+    const unsigned int set = glsl.get_decoration(subpassInput.id, spv::Decoration::DecorationDescriptorSet);
+    const unsigned int binding = glsl.get_decoration(subpassInput.id, spv::Decoration::DecorationBinding);
+
+    uniforms.AddUniform(set, binding, subpassInput.name, description);
+  }
+
   return uniforms;
 }

@@ -6,6 +6,7 @@
 
 class Core;
 class Image;
+class ImageView;
 
 class UniformsAccessor
 {
@@ -36,6 +37,8 @@ public:
   std::tuple<UniformSetPair, UniformBindingDescription, vk::DescriptorSet> AccessDescriptorSet(const UniformName& name, UniformType type);
 
   void SetSampler2D(const UniformName& name, const Image& img);
+
+  void SetSubpassInput(const UniformName& name, const ImageView& img);
 
   std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
 

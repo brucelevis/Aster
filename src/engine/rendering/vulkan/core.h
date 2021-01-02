@@ -20,7 +20,7 @@
 
 struct FrameResources
 {
-  vk::ImageView swapchainImage;
+  ImageView swapchainImage;
   vk::UniqueFence cmdBufferFreeToUse;
   vk::UniqueSemaphore swapchainImageAckquired;
   vk::UniqueSemaphore renderingFinished;

@@ -43,20 +43,15 @@ void RenderSystem::Update(const double dt)
     throw std::runtime_error("Camera is not set.");
 
   RenderGraph* rg = vkCore.BeginFrame();
-  /*rg->AddRenderSubpass()
-    .AddOutputColorAttachment(OutputColorAttachmentDescription{ BACKBUFFER_RESOURCE_ID })
-    .AddDepthStencilAttachment({"depth"})
-    .SetRenderCallback([&](FrameContext& context)
-     {
-        VertexInputDeclaration vid = StaticMeshVertex::GetVID();
+  RenderGBuffer(camera, rg);
+  RenderLight(camera, rg);
 
-        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, context);
-        UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
+  vkCore.EndFrame();
+}
 
-        RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
-     });
-     */
 
+void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
+{
   rg->AddRenderSubpass()
     .AddNewOutputColorAttachment("GBUFFER_BaseColor")
     .AddNewOutputColorAttachment("GBUFFER_Normal")
@@ -65,15 +60,56 @@ void RenderSystem::Update(const double dt)
     .AddNewOutputColorAttachment("GBUFFER_Depth")
     .AddDepthStencilAttachment("depth")
     .SetRenderCallback([&](FrameContext& context)
-     {
-       VertexInputDeclaration vid = StaticMeshVertex::GetVID();
+    {
+      vk::CommandBuffer& commandBuffer = context.commandBuffer;
+      VertexInputDeclaration vid = StaticMeshVertex::GetVID();
 
-       Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
-       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
+      UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderGbufferProgram);
 
-       RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
-     });
+      commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
+      for (Entity* e : staticMeshGroup->GetEntities())
+      {
+        if (e == nullptr)
+          continue;
+
+        for (auto* meshComponent : e->GetComponents<StaticMeshComponent>())
+        {
+          const glm::mat4 model = meshComponent->transform.GetTransformationMatrix();
+          const glm::mat4 view = camera->GetView();
+          const glm::mat4 projection = camera->GetProjection();
+
+          PerStaticMeshResource mvpResource;
+          mvpResource.mvp = projection * view * model;
+
+          uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
+
+          for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
+          {
+            const StaticMesh& mesh = meshComponent->model->meshes[i];
+            const Material& meshMaterial = meshComponent->model->materials[i];
+
+            assert(meshMaterial.colorTexture != nullptr);
+
+            uniforms->SetSampler2D("BaseColorTexture", *meshMaterial.colorTexture);
+            uniforms->SetSampler2D("NormalTexture", *meshMaterial.normalTexture);
+            uniforms->SetSampler2D("MetallicRoughnessTexture", *meshMaterial.metallicRoughnessTexture);
+            std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+
+            commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+            vk::DeviceSize offset = 0;
+            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
+            commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
+            commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
+          }
+        }
+      }
+    });
+}
+
+void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
+{
   rg->AddRenderSubpass()
     .AddInputAttachment({ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
     .AddInputAttachment({ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
@@ -83,57 +119,52 @@ void RenderSystem::Update(const double dt)
     .AddExistOutputColorAttachment(BACKBUFFER_RESOURCE_ID)
     .AddDepthStencilAttachment("depth2")
     .SetRenderCallback([&](FrameContext& context)
-      {
-        VertexInputDeclaration vid = StaticMeshVertex::GetVID();
-
-        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
-        UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
-
-        RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
-      });
-
-  vkCore.EndFrame();
-}
-
-
-void RenderSystem::RenderStaticMeshes(CameraComponent* camera, Pipeline* pipeline, UniformsAccessor* uniforms, vk::CommandBuffer& commandBuffer)
-{
-  commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
-
-  for (Entity* e : staticMeshGroup->GetEntities())
-  {
-    if (e == nullptr)
-      continue;
-
-    for (auto* meshComponent : e->GetComponents<StaticMeshComponent>())
     {
-      const glm::mat4 model = meshComponent->transform.GetTransformationMatrix();
-      const glm::mat4 view = camera->GetView();
-      const glm::mat4 projection = camera->GetProjection();
+      vk::CommandBuffer& commandBuffer = context.commandBuffer;
+      VertexInputDeclaration vid = StaticMeshVertex::GetVID();
 
-      PerStaticMeshResource mvpResource;
-      mvpResource.mvp = projection * view * model;
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
+      UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
 
-      uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
+      commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
-      for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
+      uniforms->SetSubpassInput("BaseColorTexture", context.GetImageView("GBUFFER_BaseColor"));
+      uniforms->SetSubpassInput("NormalTexture", context.GetImageView("GBUFFER_Normal"));
+      uniforms->SetSubpassInput("MetallicTexture", context.GetImageView("GBUFFER_Metallic"));
+      uniforms->SetSubpassInput("RoughnessTexture", context.GetImageView("GBUFFER_Roughness"));
+
+      for (Entity* e : staticMeshGroup->GetEntities())
       {
-        const StaticMesh& mesh = meshComponent->model->meshes[i];
-        const Material& meshMaterial = meshComponent->model->materials[i];
+        if (e == nullptr)
+          continue;
 
-        assert(meshMaterial.colorTexture != nullptr);
+        for (auto* meshComponent : e->GetComponents<StaticMeshComponent>())
+        {
+          const glm::mat4 model = meshComponent->transform.GetTransformationMatrix();
+          const glm::mat4 view = camera->GetView();
+          const glm::mat4 projection = camera->GetProjection();
 
-        uniforms->SetSampler2D("BaseColorTexture", *meshMaterial.colorTexture);
-        uniforms->SetSampler2D("NormalTexture", *meshMaterial.normalTexture);
-        uniforms->SetSampler2D("MetallicRoughnessTexture", *meshMaterial.metallicRoughnessTexture);
-        std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+          PerStaticMeshResource mvpResource;
+          mvpResource.mvp = projection * view * model;
 
-        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-        vk::DeviceSize offset = 0;
-        commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
-        commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
-        commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
+          uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
+
+          std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+          commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+
+          for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
+          {
+            const StaticMesh& mesh = meshComponent->model->meshes[i];
+            const Material& meshMaterial = meshComponent->model->materials[i];
+
+            assert(meshMaterial.colorTexture != nullptr);
+
+            vk::DeviceSize offset = 0;
+            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
+            commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
+            commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
+          }
+        }
       }
-    }
-  }
+    });
 }

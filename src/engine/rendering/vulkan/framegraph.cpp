@@ -6,7 +6,7 @@ RenderSubpass::RenderSubpass(unsigned int id)
 {
 }
 
-RenderSubpass& RenderSubpass::AddInputAttachment(const InputAttachment& desc)
+RenderSubpass& RenderSubpass::AddInputAttachment(const SubpassInput& desc)
 {
   inputAttachments.push_back(desc);
 
@@ -137,7 +137,7 @@ std::vector<vk::SubpassDependency> RenderGraph::GetAttachmentDependencies()
   for (const RenderSubpass& subpass : subpasses)
   {
     std::set<SubpassId> parents;
-    for (const InputAttachment& inputAttachment : subpass.inputAttachments)
+    for (const SubpassInput& inputAttachment : subpass.inputAttachments)
     {
       parents.insert(ResourceIdToSubpassProducerMap[inputAttachment.id]);
     }
@@ -227,6 +227,7 @@ void RenderGraph::Execute()
   context.framebuffer = framebuffer;
   context.renderPass = renderPass;
   context.commandBuffer = cmdBuffer;
+  context.renderGraph = this;
   
   for (int i = 0; i < subpasses.size(); ++i)
   {
@@ -251,7 +252,7 @@ vk::RenderPass RenderGraph::CreateRenderpass()
   {
     SubpassKey subkey;
 
-    for (const InputAttachment& inputDesc : subpass.inputAttachments)
+    for (const SubpassInput& inputDesc : subpass.inputAttachments)
     {
       AttachmentId attId = resourceIdToAttachmentIdMap[inputDesc.id];
 
@@ -303,7 +304,7 @@ vk::Framebuffer RenderGraph::CreateFramebuffer()
   views.reserve(imageAttachments.size());
 
   for (const ImageAttachment& img : imageAttachments)
-    views.push_back(img.view);
+    views.push_back(img.view.Get());
 
   const auto fbKey = FramebufferKey()
     .SetAttachments(views)
@@ -351,4 +352,12 @@ void RenderGraph::AllocateSubpassesResources()
       ownedImages.push_back(std::move(img));
     }
   }
+}
+
+const ImageView& RenderGraph::GetImageView(const ResourceId& id) const
+{
+  const AttachmentId attId = resourceIdToAttachmentIdMap.at(id);
+  const ImageAttachment& attachment = imageAttachments[attId];
+
+  return attachment.view;
 }

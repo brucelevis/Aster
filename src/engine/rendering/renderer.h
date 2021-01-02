@@ -23,6 +23,9 @@ public:
 private:
   void RenderStaticMeshes(CameraComponent* camera, Pipeline* pipeline, UniformsAccessor* uniforms, vk::CommandBuffer& commandBuffer);
 
+  void RenderGBuffer(CameraComponent* camera, RenderGraph* rg);
+  void RenderLight(CameraComponent* camera, RenderGraph* rg);
+
 private:
   Core& vkCore;
 

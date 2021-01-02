@@ -3,10 +3,43 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
 
+#include <tuple>
+
+class ImageView
+{
+public:
+  ImageView() = default;
+
+  ImageView(vk::ImageView view, vk::DescriptorImageInfo descriptorImageInfo)
+    : view(view)
+    , descriptorImageInfo(descriptorImageInfo)
+  {
+
+  }
+
+  inline vk::ImageView Get() const
+  {
+    return view;
+  }
+
+  inline const vk::DescriptorImageInfo& GetDescriptorImageInfo() const
+  {
+    return descriptorImageInfo;
+  }
+
+  inline bool operator<(const ImageView& r) const
+  {
+    return view < r.view;
+  }
+
+private:
+  vk::ImageView view;
+  vk::DescriptorImageInfo descriptorImageInfo;
+};
+
 class Image
 {
 public:
-
   Image(const vk::Device& logicalDevice, const vk::Image& img, vk::Format format, vk::Extent2D extent)
   {
     this->swapchainImage = img;
@@ -39,9 +72,9 @@ public:
       .setSampler(this->sampler.get());
   }
 
-  inline vk::ImageView GetView() const
+  inline ImageView GetView() const
   {
-    return *view;
+    return ImageView(view.get(), descriptorImageInfo);
   }
 
   inline vk::Image GetImage() const
