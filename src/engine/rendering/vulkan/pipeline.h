@@ -25,7 +25,8 @@ public:
     const DepthStencilSettings& depthStencilSettings,
     const vk::Extent2D viewportExtent,
     const vk::RenderPass renderpass,
-    const uint32_t subpass);
+    const uint32_t subpass,
+    const uint32_t attachmentsCount);
 
   inline vk::Pipeline GetPipeline() const 
   { 

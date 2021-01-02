@@ -21,9 +21,17 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
   cameraGroup = ctx->GetGroup<CameraComponent>();
   staticMeshGroup = ctx->GetGroup<StaticMeshComponent>();
 
-  Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
-  Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));
-  staticMeshShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+  {
+    Shader vertexShader = vkCore.CreateShader("static_mesh_gbuffer_vertex", ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader("static_mesh_gbuffer_fragment", ReadFile("../data/shaders/spirv/static_mesh_gbuffer.frag.spv"));
+    staticMeshShaderGbufferProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+  }
+
+  {
+    Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));
+    staticMeshShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+  }
 }
 
 void RenderSystem::Update(const double dt)
@@ -35,7 +43,7 @@ void RenderSystem::Update(const double dt)
     throw std::runtime_error("Camera is not set.");
 
   RenderGraph* rg = vkCore.BeginFrame();
-  rg->AddRenderSubpass()
+  /*rg->AddRenderSubpass()
     .AddOutputColorAttachment(OutputColorAttachmentDescription{ BACKBUFFER_RESOURCE_ID })
     .AddDepthStencilAttachment({"depth"})
     .SetRenderCallback([&](FrameContext& context)
@@ -47,6 +55,42 @@ void RenderSystem::Update(const double dt)
 
         RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
      });
+     */
+
+  rg->AddRenderSubpass()
+    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_BaseColor" })
+    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Normal" })
+    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Metallic"})
+    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Roughness"})
+    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Depth"})
+    .AddDepthStencilAttachment({ "depth" })
+    .SetRenderCallback([&](FrameContext& context)
+     {
+       VertexInputDeclaration vid = StaticMeshVertex::GetVID();
+
+       Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
+       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
+
+       RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
+     });
+
+  rg->AddRenderSubpass()
+    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddOutputColorAttachment(OutputColorAttachmentDescription{ BACKBUFFER_RESOURCE_ID })
+    .AddDepthStencilAttachment({ "depth2" })
+    .SetRenderCallback([&](FrameContext& context)
+      {
+        VertexInputDeclaration vid = StaticMeshVertex::GetVID();
+
+        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
+        UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
+
+        RenderStaticMeshes(camera, pipeline, uniforms, context.commandBuffer);
+      });
 
   vkCore.EndFrame();
 }
@@ -79,7 +123,9 @@ void RenderSystem::RenderStaticMeshes(CameraComponent* camera, Pipeline* pipelin
 
         assert(meshMaterial.colorTexture != nullptr);
 
-        uniforms->SetSampler2D("MeshTexture", *meshMaterial.colorTexture);
+        uniforms->SetSampler2D("BaseColorTexture", *meshMaterial.colorTexture);
+        uniforms->SetSampler2D("NormalTexture", *meshMaterial.normalTexture);
+        uniforms->SetSampler2D("MetallicRoughnessTexture", *meshMaterial.metallicRoughnessTexture);
         std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
 
         commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);

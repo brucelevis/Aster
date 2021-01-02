@@ -29,5 +29,6 @@ private:
   Group* cameraGroup;
   Group* staticMeshGroup;
 
+  std::unique_ptr<ShaderProgram> staticMeshShaderGbufferProgram;
   std::unique_ptr<ShaderProgram> staticMeshShaderProgram;
 };

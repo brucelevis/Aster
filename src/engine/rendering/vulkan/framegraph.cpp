@@ -113,7 +113,7 @@ std::vector<vk::SubpassDependency> RenderGraph::GetAttachmentDependencies()
         .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
         .setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput)
         .setDstSubpass(dst)
-        .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead)
+        .setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead)
         .setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader);
 
       deps.push_back(dep);
@@ -278,7 +278,7 @@ void RenderGraph::AllocateSubpassesResources()
       if (resourceIdToAttachmentIdMap.find(desc.id) != resourceIdToAttachmentIdMap.end())
         throw std::runtime_error("AllocateSubpassesResources: can't add a new resource: index already in use.");
 
-      Image img = core.Allocate2DImage(backbufferDescription.format, backbufferDescription.size, vk::ImageUsageFlagBits::eColorAttachment);
+      Image img = core.Allocate2DImage(backbufferDescription.format, backbufferDescription.size, vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eInputAttachment);
 
       const AttachmentId attId = static_cast<AttachmentId>(imageAttachmentResources.size());
       imageAttachmentResources.push_back(img.GetView());

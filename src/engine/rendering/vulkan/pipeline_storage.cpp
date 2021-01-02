@@ -58,10 +58,16 @@ PipelineKey& PipelineKey::SetSubpassNumber(const uint32_t n)
   return *this;
 }
 
+PipelineKey& PipelineKey::SetAttachmentsCount(const uint32_t a)
+{
+  attachmentsCount = a;
+  return *this;
+}
+
 bool PipelineKey::operator<(const PipelineKey& r) const
 {
-  return std::tie(vertexShader, fragmentShader, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass) <
-    std::tie(r.vertexShader, r.fragmentShader, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass);
+  return std::tie(vertexShader, fragmentShader, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, attachmentsCount) <
+    std::tie(r.vertexShader, r.fragmentShader, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.attachmentsCount);
 }
 
 PipelineStorage::PipelineStorage(Core& core)
@@ -69,7 +75,14 @@ PipelineStorage::PipelineStorage(Core& core)
 {
 }
 
-Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber)
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, 
+                                       const VertexInputDeclaration& vertexInputDeclaration, 
+                                       vk::PrimitiveTopology topology, 
+                                       const DepthStencilSettings& depthStencilSettings, 
+                                       const vk::Extent2D& viewportExtent, 
+                                       vk::RenderPass renderPass, 
+                                       uint32_t subpassNumber, 
+                                       uint32_t attachmentsCount)
 {
   const auto key = PipelineKey()
     .SetVertexShaderName(program.GetVertexShader().GetName())
@@ -79,21 +92,22 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const Verte
     .SetDepthStencilSettings(depthStencilSettings)
     .SetViewportExtent(viewportExtent)
     .SetRenderPass(renderPass)
-    .SetSubpassNumber(subpassNumber);
+    .SetSubpassNumber(subpassNumber)
+    .SetAttachmentsCount(attachmentsCount);
 
   if (storage.find(key) != storage.end())
     return storage[key].get();
 
   const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
-  std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber);
+  std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber, attachmentsCount);
   Pipeline* pipeline = pp.get();
   storage[key] = std::move(pp);
 
   return pipeline;
 }
 
-Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext)
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, uint32_t attachmentsCount,const FrameContext& frameContext)
 {
-  return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber);
+  return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, attachmentsCount);
 }
