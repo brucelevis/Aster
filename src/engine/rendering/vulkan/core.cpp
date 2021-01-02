@@ -495,9 +495,9 @@ Image Core::Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format for
   return std::move(deviceImage);
 }
 
-Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageAspectFlags aspectFlags)
+Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usageFlags, vk::ImageAspectFlags aspectFlags)
 {
-  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, vk::ImageUsageFlagBits::eDepthStencilAttachment, aspectFlags);
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usageFlags, aspectFlags);
 }
 
 vk::PhysicalDevice Core::GetPhysicalDevice(vk::Instance instance)

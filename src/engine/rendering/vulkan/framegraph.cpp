@@ -59,7 +59,7 @@ RenderSubpass& RenderSubpass::AddDepthOnlyAttachment(const ResourceId& id)
   createInfo.finalLayout = vk::ImageLayout::eDepthAttachmentOptimal;
   createInfo.loadOp = vk::AttachmentLoadOp::eClear;
   createInfo.storeOp = vk::AttachmentStoreOp::eStore;
-  createInfo.usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+  createInfo.usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eInputAttachment;
 
   depthStencilAttachment = createInfo;
 
@@ -76,7 +76,7 @@ RenderSubpass& RenderSubpass::AddDepthStencilAttachment(const ResourceId& id)
   createInfo.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
   createInfo.loadOp = vk::AttachmentLoadOp::eClear;
   createInfo.storeOp = vk::AttachmentStoreOp::eStore;
-  createInfo.usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+  createInfo.usageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eInputAttachment;
 
   depthStencilAttachment = createInfo;
 
@@ -345,7 +345,7 @@ void RenderGraph::AllocateSubpassesResources()
                                              ? vk::ImageAspectFlagBits::eDepth
                                              : vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
 
-      Image img = core.AllocateDepthStencilImage(createInfo.format, backbufferDescription.size, aspectFlags);
+      Image img = core.AllocateDepthStencilImage(createInfo.format, backbufferDescription.size, createInfo.usageFlags, aspectFlags);
       createInfo.view = img.GetView();
       AddAttachmentResource(createInfo);
       ownedImages.push_back(std::move(img));
