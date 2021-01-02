@@ -58,12 +58,12 @@ void RenderSystem::Update(const double dt)
      */
 
   rg->AddRenderSubpass()
-    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_BaseColor" })
-    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Normal" })
-    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Metallic"})
-    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Roughness"})
-    .AddOutputColorAttachment(ImageAttachmentDescription{"GBUFFER_Depth"})
-    .AddDepthStencilAttachment({ "depth" })
+    .AddNewOutputColorAttachment("GBUFFER_BaseColor")
+    .AddNewOutputColorAttachment("GBUFFER_Normal")
+    .AddNewOutputColorAttachment("GBUFFER_Metallic")
+    .AddNewOutputColorAttachment("GBUFFER_Roughness")
+    .AddNewOutputColorAttachment("GBUFFER_Depth")
+    .AddDepthStencilAttachment("depth")
     .SetRenderCallback([&](FrameContext& context)
      {
        VertexInputDeclaration vid = StaticMeshVertex::GetVID();
@@ -75,13 +75,13 @@ void RenderSystem::Update(const double dt)
      });
 
   rg->AddRenderSubpass()
-    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment(InputAttachmentDescription{ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddOutputColorAttachment(OutputColorAttachmentDescription{ BACKBUFFER_RESOURCE_ID })
-    .AddDepthStencilAttachment({ "depth2" })
+    .AddInputAttachment({ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddExistOutputColorAttachment(BACKBUFFER_RESOURCE_ID)
+    .AddDepthStencilAttachment("depth2")
     .SetRenderCallback([&](FrameContext& context)
       {
         VertexInputDeclaration vid = StaticMeshVertex::GetVID();

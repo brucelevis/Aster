@@ -15,24 +15,6 @@ namespace vk
   }
 }
 
-namespace
-{
-  vk::ImageLayout GetLayoutFromUsage(ImageUsage u)
-  {
-    switch (u)
-    {
-    case ImageUsage::Present:
-      return vk::ImageLayout::ePresentSrcKHR;
-
-    case ImageUsage::DepthStencil:
-      return vk::ImageLayout::eDepthStencilAttachmentOptimal;
-
-    default:
-      return vk::ImageLayout::eColorAttachmentOptimal;
-    }
-  }
-}
-
 bool SubpassKey::operator<(const SubpassKey& r) const
 {
   return std::tie(inputAttachmentReferences, outputColorAttachmentReferences) <
@@ -51,9 +33,9 @@ RenderPassKey& RenderPassKey::SetDependencies(const std::vector<vk::SubpassDepen
   return *this;
 }
 
-RenderPassKey& RenderPassKey::SetAttachmentsUsages(const std::vector<ImageUsage>& u)
+RenderPassKey& RenderPassKey::SetImageAttachments(const std::vector<ImageAttachment>& a)
 {
-  AttachmentsUsages = u;
+  imageAttachments = a;
   return *this;
 }
 
@@ -67,7 +49,7 @@ RenderPassKey& RenderPassKey::SetBackbufferFormat(const vk::Format& f)
 
 bool RenderPassKey::operator<(const RenderPassKey& r) const
 {
-  return std::tie(subpassesDescriptions, dependencies, AttachmentsUsages, backbufferFormat) < std::tie(r.subpassesDescriptions, r.dependencies, r.AttachmentsUsages, r.backbufferFormat);
+  return std::tie(subpassesDescriptions, dependencies, imageAttachments, backbufferFormat) < std::tie(r.subpassesDescriptions, r.dependencies, r.imageAttachments, r.backbufferFormat);
 }
 
 RenderPassStorage::RenderPassStorage(Core& core)
@@ -83,19 +65,15 @@ vk::RenderPass RenderPassStorage::GetRenderPass(const RenderPassKey& key)
   }
 
   std::vector<vk::AttachmentDescription> attachmentDescriptions;
-  for (int i = 0; i < key.AttachmentsUsages.size(); ++i)
+  for (const ImageAttachment& attachment: key.imageAttachments)
   {
-    const vk::ImageLayout finalLayout = ::GetLayoutFromUsage(key.AttachmentsUsages[i]);
-    const vk::Format format = key.AttachmentsUsages[i] == ImageUsage::DepthStencil ? vk::Format::eD32SfloatS8Uint : key.backbufferFormat;
-    const vk::AttachmentLoadOp lOp = (key.AttachmentsUsages[i] == ImageUsage::Present) || (key.AttachmentsUsages[i] == ImageUsage::DepthStencil) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare;
-
     const auto desc = vk::AttachmentDescription()
-      .setFormat(format)
+      .setFormat(attachment.format)
       .setSamples(vk::SampleCountFlagBits::e1)
-      .setLoadOp(lOp)
-      .setStoreOp(vk::AttachmentStoreOp::eStore)
-      .setInitialLayout(vk::ImageLayout::eUndefined)
-      .setFinalLayout(finalLayout);
+      .setLoadOp(attachment.loadOp)
+      .setStoreOp(attachment.storeOp)
+      .setInitialLayout(attachment.initialLayout)
+      .setFinalLayout(attachment.finalLayout);
 
     attachmentDescriptions.push_back(desc);
   }

@@ -19,7 +19,7 @@ struct FramebufferKey
 
   FramebufferKey& SetRenderPass(vk::RenderPass renderPass);
 
-  FramebufferKey& SetAttachments(std::vector<vk::ImageView> attachments);
+  FramebufferKey& SetAttachments(const std::vector<vk::ImageView>& attachments);
 
   FramebufferKey& SetWidth(uint32_t width);
 

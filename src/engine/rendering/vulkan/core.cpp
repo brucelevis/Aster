@@ -231,7 +231,19 @@ RenderGraph* Core::BeginFrame()
   fr.renderGraph->SetCommandBuffer(fr.cmdBuffer.get());
   fr.renderGraph->SetUniformsAccessorStorage(fr.uaStorage.get());
   fr.renderGraph->SetBackbufferDescription(bfd);
-  fr.renderGraph->AddAttachmentResource(BACKBUFFER_RESOURCE_ID, fr.swapchainImage, ImageUsage::Present);
+
+  ImageAttachment backbufferAttachment;
+  backbufferAttachment.id = BACKBUFFER_RESOURCE_ID;
+  backbufferAttachment.view = fr.swapchainImage;
+  backbufferAttachment.format = bfd.format;
+  backbufferAttachment.type = ImageType::Present;
+  backbufferAttachment.initialLayout = vk::ImageLayout::eUndefined;
+  backbufferAttachment.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+  backbufferAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+  backbufferAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+  backbufferAttachment.usageFlags = vk::ImageUsageFlagBits::eColorAttachment;
+
+  fr.renderGraph->AddAttachmentResource(backbufferAttachment);
 
   return fr.renderGraph.get();
 }
@@ -483,9 +495,9 @@ Image Core::Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format for
   return std::move(deviceImage);
 }
 
-Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent)
+Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageAspectFlags aspectFlags)
 {
-  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, vk::ImageUsageFlagBits::eDepthStencilAttachment, vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, vk::ImageUsageFlagBits::eDepthStencilAttachment, aspectFlags);
 }
 
 vk::PhysicalDevice Core::GetPhysicalDevice(vk::Instance instance)

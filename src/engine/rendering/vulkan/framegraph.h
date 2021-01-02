@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "image.h"
 #include "enums.h"
 #include "framecontext.h"
@@ -19,18 +20,12 @@ class FramebufferStorage;
 class RenderPassStorage;
 class UniformsAccessorStorage;
 
-typedef std::string ResourceId;
 typedef unsigned int SubpassId;
 typedef unsigned int AttachmentId;
 
 #define BACKBUFFER_RESOURCE_ID ResourceId("__backbuffer_resource")
 
-struct ImageAttachmentDescription
-{
-  ResourceId id;
-};
-
-struct InputAttachmentDescription
+struct InputAttachment
 {
   ResourceId id;
   vk::ImageLayout layout;
@@ -62,17 +57,19 @@ class RenderSubpass
 public:
   RenderSubpass(unsigned int id);
 
-  RenderSubpass& AddInputAttachment(const InputAttachmentDescription& desc);
+  RenderSubpass& AddInputAttachment(const InputAttachment& desc);
 
   RenderSubpass& AddInputSampler();
 
   RenderSubpass& AddInputBuffer();
 
-  RenderSubpass& AddOutputColorAttachment(const ImageAttachmentDescription& desc);
+  RenderSubpass& AddNewOutputColorAttachment(const ResourceId& id, vk::Format format = vk::Format::eUndefined);
 
-  RenderSubpass& AddOutputColorAttachment(const OutputColorAttachmentDescription& desc);
+  RenderSubpass& AddExistOutputColorAttachment(const ResourceId& id);
 
-  RenderSubpass& AddDepthStencilAttachment(const DepthStencilAttachmentDescription& desc);
+  RenderSubpass& AddDepthOnlyAttachment(const ResourceId& id);
+
+  RenderSubpass& AddDepthStencilAttachment(const ResourceId& id);
 
   RenderSubpass& AddOutputBuffer();
 
@@ -83,11 +80,11 @@ public:
 private:
   const unsigned int id;
   RenderPassExecutionFunction renderCallback;
-  std::vector<InputAttachmentDescription> inputAttachments;
-  std::vector<OutputColorAttachmentDescription> outputColorAttachments;
+  std::vector<InputAttachment> inputAttachments;
+  std::vector<ResourceId> outputColorAttachments;
 
-  std::vector<ImageAttachmentDescription> imageResourceDescriptions;
-  std::optional<DepthStencilAttachmentDescription> depthStencilAttachment;
+  std::vector<ImageAttachment> imageAttachmentCreateInfos;
+  std::optional<ImageAttachment> depthStencilAttachment;
 };
 
 struct BackbufferDescription
@@ -117,7 +114,7 @@ public:
 
   void Compile();
 
-  void AddAttachmentResource(ResourceId id, vk::ImageView view, ImageUsage usage);
+  void AddAttachmentResource(const ImageAttachment& attachment);
 
   void SetBackbufferDescription(const BackbufferDescription& bfDescription);
 
@@ -146,8 +143,7 @@ private:
   std::vector<RenderSubpass> subpasses;
 
   std::map<ResourceId, AttachmentId> resourceIdToAttachmentIdMap;
-  std::vector<vk::ImageView> imageAttachmentResources;
-  std::vector<ImageUsage> imageAttachmentResourceUsages;
+  std::vector<ImageAttachment> imageAttachments;
 
   std::vector<Image> ownedImages;
 

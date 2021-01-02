@@ -1,8 +1,11 @@
 #pragma once
 
-enum class ImageUsage
+enum class ImageType
 {
-  Default,
   Present,
-  DepthStencil,
+  DepthOnlyAttachment,
+  StencilOnlyAttachment,
+  DepthStencilAttachment,
+  InputAttachment,
+  OutputColorAttachment
 };

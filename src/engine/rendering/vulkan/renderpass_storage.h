@@ -1,9 +1,6 @@
 #pragma once
 
-#include "enums.h"
-
-#define VK_USE_PLATFORM_WIN32_KHR
-#include <vulkan/vulkan.hpp>
+#include "common.h"
 
 #include <map>
 #include <vector>
@@ -30,7 +27,7 @@ public:
 
   RenderPassKey& SetDependencies(const std::vector<vk::SubpassDependency>& deps);
 
-  RenderPassKey& SetAttachmentsUsages(const std::vector<ImageUsage>& u);
+  RenderPassKey& SetImageAttachments(const std::vector<ImageAttachment>& a);
 
   RenderPassKey& SetBackbufferFormat(const vk::Format& f);
 
@@ -39,7 +36,7 @@ public:
 private:
   std::vector<SubpassKey> subpassesDescriptions;
   std::vector<vk::SubpassDependency> dependencies;
-  std::vector<ImageUsage> AttachmentsUsages;
+  std::vector<ImageAttachment> imageAttachments;
   vk::Format backbufferFormat;
 };
 

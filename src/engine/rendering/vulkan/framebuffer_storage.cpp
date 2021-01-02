@@ -12,7 +12,7 @@ FramebufferKey& FramebufferKey::SetRenderPass(vk::RenderPass renderPass)
   return *this;
 }
 
-FramebufferKey& FramebufferKey::SetAttachments(std::vector<vk::ImageView> attachments)
+FramebufferKey& FramebufferKey::SetAttachments(const std::vector<vk::ImageView>& attachments)
 {
   this->attachments = attachments;
   return *this;
