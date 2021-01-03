@@ -2,6 +2,7 @@
 
 #include <engine/components/camera_component.h>
 #include <engine/components/static_mesh_component.h>
+#include <engine/components/sky_box_component.h>
 #include <engine/rendering/vulkan/fileutils.h>
 
 #include <ecs/Context.h>
@@ -12,6 +13,13 @@ namespace
   {
     glm::mat4 mvp;
   };
+
+  struct SkyboxPerFrameResource
+  {
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 model;
+  };
 }
 
 RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
@@ -20,6 +28,7 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
 {
   cameraGroup = ctx->GetGroup<CameraComponent>();
   staticMeshGroup = ctx->GetGroup<StaticMeshComponent>();
+  skyboxGroup = ctx->GetGroup<SkyBoxComponent>();
 
   {
     Shader vertexShader = vkCore.CreateShader("static_mesh_gbuffer_vertex", ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
@@ -31,6 +40,12 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
     Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
     Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));
     staticMeshShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+  }
+
+  {
+    Shader vertexShader = vkCore.CreateShader("sky_box_vertex", ReadFile("../data/shaders/spirv/sky_box.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader("sky_box_fragment", ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
+    skyBoxShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 }
 
@@ -165,6 +180,32 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
             commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
           }
         }
+      }
+
+      {
+        SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<SkyBoxComponent>();
+        VertexInputDeclaration vid = SkyBoxVertex::GetVID();
+
+        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
+        commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
+
+        UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*skyBoxShaderProgram);
+
+        SkyboxPerFrameResource perFrameUbo;
+        perFrameUbo.projection = camera->GetProjection();
+        perFrameUbo.view = camera->GetView();
+        perFrameUbo.model = skybox->transform.GetTransformationMatrix();
+
+        uniforms->SetUniformBuffer("PerFrame", &perFrameUbo);
+        uniforms->SetSamplerCube("SkyboxTexture", skybox->cubeMap->GetView());
+
+        std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+        commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+
+        vk::DeviceSize offset = 0;
+        commandBuffer.bindVertexBuffers(0, 1, &skybox->skyboxMesh->vertices.GetBuffer(), &offset);
+        commandBuffer.bindIndexBuffer(skybox->skyboxMesh->indices.GetBuffer(), 0, vk::IndexType::eUint32);
+        commandBuffer.drawIndexed(skybox->skyboxMesh->indexCount, 1, 0, 0, 0);
       }
     });
 }

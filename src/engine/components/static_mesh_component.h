@@ -15,8 +15,6 @@ struct StaticMesh
   Buffer vertices;
   Buffer indices;
   unsigned int indexCount = 0;
-
-  typedef StaticMeshVertex Vertex;
 };
 
 struct Material

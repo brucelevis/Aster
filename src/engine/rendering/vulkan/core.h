@@ -13,6 +13,7 @@
 #include <memory>
 #include <stdint.h>
 #include <set>
+#include <array>
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.hpp>
@@ -58,11 +59,15 @@ public:
 
   Buffer AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
 
-  Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask);
+  Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask, vk::ImageCreateFlags createFlags, uint32_t arrayLayers, vk::ImageViewType viewType);
 
   Image Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
 
   Image Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
+
+  void TransferImageDataToDeviceMemory(const HostBuffer& buffer, const Image& deviceImage, const std::vector<vk::BufferImageCopy>& copyRegions, uint32_t nLayers , vk::ImageLayout finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal);
+
+  Image AllocateCubeMap(vk::Format format, void* src, vk::DeviceSize size, uint32_t baseWidth, uint32_t baseHeight, std::array<vk::DeviceSize, 6> offsets);
 
   Image AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usageFlags, vk::ImageAspectFlags aspectFlags);
 

@@ -9,13 +9,17 @@ application:
     - name: damaged_helmet
       mesh_file: ../data/meshes/gltf-samples/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf
 
+  cube_maps:
+    - name: cubemap_yokohama
+      texture_file: ../data/textures/cube_maps/cubemap_yokohama_rgba.ktx
+
   entities:
     - components:
        - type: camera
          position: [0.0, 0.0, 0.0]
          fov: 45.0
          zNear: 0.1
-         zFar: 100.0
+         zFar: 1000.0
 
     - components:
       - type: static_mesh
@@ -23,3 +27,8 @@ application:
         position: [0.0, 0.0, -5.0]
         rotation: [-90.0, 180, 0.0]
         scale: [1.0, 1.0, 1.0]
+
+    - components:
+      - type: sky_box
+        cube_map: cubemap_yokohama
+        scale: [100, 100, 100]

@@ -38,6 +38,8 @@ public:
 
   void SetSampler2D(const UniformName& name, const Image& img);
 
+  void SetSamplerCube(const UniformName& name, const ImageView& img);
+
   void SetSubpassInput(const UniformName& name, const ImageView& img);
 
   std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();

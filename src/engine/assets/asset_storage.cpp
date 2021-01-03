@@ -9,6 +9,7 @@
 #include <stack>
 #include <optional>
 
+#include <ktx/ktx.h>
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -51,7 +52,6 @@ namespace
 AssetStorage::AssetStorage(Core& vkCore)
   : vkCore(vkCore)
 {
-
 }
 
 class AttributeAccessor
@@ -151,6 +151,42 @@ private:
   int i;
 };
 
+Image* AssetStorage::LoadCubeMap(const std::string& file, const std::string& cubeMapName)
+{
+  ktxTexture* texture;
+  KTX_error_code result;
+  ktx_size_t offset;
+  ktx_uint8_t* image;
+
+  result = ktxTexture_CreateFromNamedFile(file.c_str(),
+    KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
+    &texture);
+
+  if (texture->numFaces != 6)
+    throw std::runtime_error("texture is not cube map.");
+
+  std::array<vk::DeviceSize, 6> offsets;
+  for (int i = 0; i < 6; ++i)
+  {
+    ktx_size_t offset;
+    result = ktxTexture_GetImageOffset(texture, 0, 0, i, &offset);
+
+    if (result)
+      throw std::runtime_error("failed to get texture offset.");
+
+    offsets[i] = offset;
+  }
+
+  ktx_uint8_t* src = texture->pData;
+  ktx_size_t size = texture->dataSize;
+
+  Image cubeMap = vkCore.AllocateCubeMap(vk::Format::eR8G8B8A8Unorm, texture->pData, texture->dataSize, texture->baseWidth, texture->baseHeight, offsets);
+
+  cubeMaps.insert({ cubeMapName, std::move(cubeMap) });
+
+  return &cubeMaps.at(cubeMapName);
+}
+
 StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string& modelName)
 {
   const std::string rootUri = GetFolderPath(file);
@@ -206,7 +242,7 @@ StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::
 
   for (tinygltf::Mesh mesh : model.meshes)
   {
-    std::vector<StaticMesh::Vertex> vertices;
+    std::vector<StaticMeshVertex> vertices;
     std::vector<uint32_t> indices;
 
     for (tinygltf::Primitive primitive : mesh.primitives)
@@ -232,7 +268,7 @@ StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::
         indices.push_back(indexAccessor++);
     }
 
-    Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMesh::Vertex), vk::BufferUsageFlagBits::eVertexBuffer);
+    Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMeshVertex), vk::BufferUsageFlagBits::eVertexBuffer);
     Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
 
     Material material;
@@ -258,4 +294,19 @@ StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::
   }
 
   return std::move(staticModel);
+}
+
+void AssetStorage::LoadStaticMesh(void* vertexSrc, size_t vertexSrcSize, void* indexSrc, uint32_t indexSrcSize, uint32_t indexCount, const std::string& meshName)
+{
+  Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertexSrc, vertexSrcSize, vk::BufferUsageFlagBits::eVertexBuffer);
+  Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indexSrc, indexSrcSize, vk::BufferUsageFlagBits::eIndexBuffer);
+
+  staticMeshes.insert({
+    meshName, 
+    StaticMesh{
+      std::move(vertexBuffer),
+      std::move(indexBuffer),
+      static_cast<uint32_t>(indexCount)
+    }
+  });
 }

@@ -28,7 +28,31 @@ public:
     return nullptr;
   }
 
+  Image* LoadCubeMap(const std::string& file, const std::string& cubeMapName);
+  inline Image* GetCubeMap(const std::string& cubeMapName)
+  {
+    const auto it = cubeMaps.find(cubeMapName);
+
+    if (it != cubeMaps.end())
+      return &it->second;
+
+    return nullptr;
+  }
+
   StaticModel* LoadModel(const std::string& file, const std::string& modelName);
+
+  void LoadStaticMesh(void* vertexSrc, size_t vertexSrcSize, void* indexSrc, uint32_t indexSrcSize, uint32_t indexCount, const std::string& meshName);
+  
+  inline StaticMesh* GetStaticMesh(const std::string& meshName)
+  {
+    const auto it = staticMeshes.find(meshName);
+
+    if (it != staticMeshes.end())
+      return &it->second;
+
+    return nullptr;
+  }
+
 
 private:
   void LoadAllTextures(const tinygltf::Model& model, const std::string& rootUri);
@@ -37,6 +61,8 @@ private:
 private:
   Core& vkCore;
 
+  std::unordered_map<std::string, StaticMesh> staticMeshes;
   std::unordered_map<std::string, StaticModel> staticModels;
   std::unordered_map<std::string, Image> textures;
+  std::unordered_map<std::string, Image> cubeMaps;
 };

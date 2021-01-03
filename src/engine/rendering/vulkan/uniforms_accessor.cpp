@@ -57,6 +57,19 @@ void UniformsAccessor::SetSampler2D(const UniformName& name, const Image& img)
     .setPImageInfo(&img.GetDescriptorImageInfo());
 }
 
+void UniformsAccessor::SetSamplerCube(const UniformName& name, const ImageView& img)
+{
+  auto [setBinding, _, dscSet] = AccessDescriptorSet(name, UniformType::SamplerCube);
+
+  writes[setBinding] = vk::WriteDescriptorSet()
+    .setDescriptorCount(1)
+    .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+    .setDstArrayElement(0)
+    .setDstBinding(setBinding.binding)
+    .setDstSet(dscSet)
+    .setPImageInfo(&img.GetDescriptorImageInfo());
+}
+
 void UniformsAccessor::SetSubpassInput(const UniformName& name, const ImageView& view)
 {
   auto [setBinding, _, dscSet] = AccessDescriptorSet(name, UniformType::SubpassInput);

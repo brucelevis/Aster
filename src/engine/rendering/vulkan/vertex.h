@@ -20,3 +20,17 @@ struct StaticMeshVertex
     return vid;
   }
 };
+
+struct SkyBoxVertex
+{
+  glm::vec3 position;
+
+  static inline VertexInputDeclaration GetVID()
+  {
+    VertexInputDeclaration vid;
+    vid.AddBindingDescription(0, sizeof(SkyBoxVertex));
+    vid.AddAttributeDescription(vk::Format::eR32G32B32Sfloat, 0, 0, offsetof(SkyBoxVertex, position));
+
+    return vid;
+  }
+};

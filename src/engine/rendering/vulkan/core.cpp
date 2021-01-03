@@ -344,15 +344,15 @@ std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> Core::Alloc
   return { std::move(buf), std::move(memory), memRec.size };
 }
 
-Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask)
+Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask, vk::ImageCreateFlags createFlags, uint32_t arrayLayers, vk::ImageViewType viewType)
 {
   const auto imageCreateInfo = vk::ImageCreateInfo()
-    //.setFlags()
+    .setFlags(createFlags)
     .setImageType(type)
     .setFormat(format)
     .setExtent(extent)
     .setMipLevels(1)
-    .setArrayLayers(1)
+    .setArrayLayers(arrayLayers)
     .setSamples(vk::SampleCountFlagBits::e1)
     .setTiling(vk::ImageTiling::eOptimal)
     .setUsage(usage)
@@ -376,11 +376,11 @@ Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Exten
     .setBaseMipLevel(0)
     .setLevelCount(1)
     .setBaseArrayLayer(0)
-    .setLayerCount(1);
+    .setLayerCount(arrayLayers);
 
   const auto viewCreateInfo = vk::ImageViewCreateInfo()
     .setImage(img.get())
-    .setViewType(vk::ImageViewType::e2D)
+    .setViewType(viewType)
     .setFormat(format)
     .setSubresourceRange(subresourceRange);
 
@@ -411,7 +411,7 @@ Image Core::AllocateImage(vk::ImageType type, vk::Format format, const vk::Exten
 
 Image Core::Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
 {
-  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usage, vk::ImageAspectFlagBits::eColor);
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usage, vk::ImageAspectFlagBits::eColor, vk::ImageCreateFlags{}, 1, vk::ImageViewType::e2D);
 }
 
 Image Core::Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage)
@@ -495,9 +495,112 @@ Image Core::Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format for
   return std::move(deviceImage);
 }
 
+void Core::TransferImageDataToDeviceMemory(const HostBuffer& srcBuffer, const Image& deviceImage, const std::vector<vk::BufferImageCopy>& copyRegions, uint32_t nLayers, vk::ImageLayout finalLayout)
+{
+  const auto cmdBufferAllocateInfo = vk::CommandBufferAllocateInfo()
+    .setCommandPool(cmdPool.get())
+    .setCommandBufferCount(1)
+    .setLevel(vk::CommandBufferLevel::ePrimary);
+
+  vk::UniqueCommandBuffer cmdBuffer = std::move(logicalDevice->allocateCommandBuffersUnique(cmdBufferAllocateInfo)[0]);
+  cmdBuffer->begin(vk::CommandBufferBeginInfo());
+
+  const auto subresourceRange = vk::ImageSubresourceRange()
+    .setAspectMask(vk::ImageAspectFlagBits::eColor)
+    .setBaseMipLevel(0)
+    .setLevelCount(1)
+    .setBaseArrayLayer(0)
+    .setLayerCount(nLayers);
+
+  auto imgMemoryBarrier = vk::ImageMemoryBarrier()
+    .setSrcAccessMask(vk::AccessFlagBits{})
+    .setDstAccessMask(vk::AccessFlagBits::eTransferWrite)
+    .setOldLayout(vk::ImageLayout::eUndefined)
+    .setNewLayout(vk::ImageLayout::eTransferDstOptimal)
+    .setImage(deviceImage.GetImage())
+    .setSubresourceRange(subresourceRange);
+
+  cmdBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
+    vk::DependencyFlagBits{},
+    0, nullptr,
+    0, nullptr,
+    1, &imgMemoryBarrier);
+
+  cmdBuffer->copyBufferToImage(srcBuffer.GetBuffer(), deviceImage.GetImage(), vk::ImageLayout::eTransferDstOptimal, copyRegions.size(), copyRegions.data());
+
+  imgMemoryBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+  imgMemoryBarrier.newLayout = finalLayout;
+
+  imgMemoryBarrier = vk::ImageMemoryBarrier()
+    .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+    .setNewLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+    .setImage(deviceImage.GetImage())
+    .setSubresourceRange(subresourceRange);
+
+  cmdBuffer->pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader,
+    vk::DependencyFlagBits{},
+    0, nullptr,
+    0, nullptr,
+    1, & imgMemoryBarrier);
+
+  vk::UniqueFence bufferCopiedFence = logicalDevice->createFenceUnique(vk::FenceCreateInfo());
+  const auto submitInfo = vk::SubmitInfo()
+    .setCommandBufferCount(1)
+    .setPCommandBuffers(&cmdBuffer.get());
+
+  cmdBuffer->end();
+
+  transferQueue.submit(1, &submitInfo, bufferCopiedFence.get());
+
+  const bool waitAll = true;
+  logicalDevice->waitForFences(1, &bufferCopiedFence.get(), waitAll, uint64_t(-1));
+}
+
 Image Core::AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usageFlags, vk::ImageAspectFlags aspectFlags)
 {
-  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usageFlags, aspectFlags);
+  return AllocateImage(vk::ImageType::e2D, format, vk::Extent3D{ extent.width, extent.height, 1 }, usageFlags, aspectFlags, vk::ImageCreateFlags{}, 1, vk::ImageViewType::e2D);
+}
+
+Image Core::AllocateCubeMap(vk::Format format, void* src, vk::DeviceSize size, uint32_t baseWidth, uint32_t baseHeight, std::array<vk::DeviceSize, 6> offsets)
+{
+  HostBuffer hostBuffer = AllocateHostBuffer(size, vk::BufferUsageFlagBits::eTransferSrc);
+  hostBuffer.UploadMemory(src, size, 0);
+
+  const int nlayers = 6;
+
+  Image deviceImage = AllocateImage(vk::ImageType::e2D,
+                                   format,
+                                   vk::Extent3D{ baseWidth, baseHeight, 1 },
+                                   vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst,
+                                   vk::ImageAspectFlagBits::eColor,
+                                   vk::ImageCreateFlagBits::eCubeCompatible, 
+                                   nlayers,
+                                   vk::ImageViewType::eCube);
+
+  std::vector<vk::BufferImageCopy> copyRegions;
+  for (int i = 0; i < offsets.size(); ++i)
+  {
+    vk::DeviceSize& faceOffset = offsets[i];
+
+    copyRegions.push_back(
+      vk::BufferImageCopy()
+        .setBufferOffset(faceOffset)
+        .setImageExtent(vk::Extent3D{ baseWidth, baseHeight, 1 })
+        .setImageSubresource(
+          vk::ImageSubresourceLayers()
+            .setAspectMask(vk::ImageAspectFlagBits::eColor)
+            .setBaseArrayLayer(i)
+            .setLayerCount(1)
+            .setMipLevel(0)
+      )
+    );
+  }
+
+  TransferImageDataToDeviceMemory(hostBuffer, deviceImage, copyRegions, nlayers);
+
+  return std::move(deviceImage);
 }
 
 vk::PhysicalDevice Core::GetPhysicalDevice(vk::Instance instance)

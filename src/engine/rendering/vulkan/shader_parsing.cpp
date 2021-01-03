@@ -21,6 +21,21 @@ namespace
       throw std::runtime_error(err.c_str());
     }
   }
+
+  UniformType GetUniformTypeFromSpirvDim(spv::Dim dim)
+  {
+    switch (dim)
+    {
+    case spv::Dim::Dim2D:
+      return UniformType::Sampler2D;
+
+    case spv::Dim::DimCube:
+      return UniformType::SamplerCube;
+
+    default:
+      throw std::runtime_error("unsupported dim for sampler");
+    }
+  }
 }
 
 void PipelineUniforms::AddUniform(unsigned int set, unsigned int binding, const std::string& name, const UniformBindingDescription& description)
@@ -177,13 +192,10 @@ PipelineUniforms SpirvParser::ParseShader(const std::vector<uint32_t>& byteCode)
   {
     spirv_cross::SPIRType type = glsl.get_type(sampler.type_id);
 
-    if (type.image.dim != spv::Dim2D)
-      throw std::runtime_error("Sampler's dim != 2");
-
     UniformBindingDescription description;
     description.size = 0;
     description.stages = stage;
-    description.type = UniformType::Sampler2D;
+    description.type = GetUniformTypeFromSpirvDim(type.image.dim);
 
     const unsigned int set = glsl.get_decoration(sampler.id, spv::Decoration::DecorationDescriptorSet);
     const unsigned int binding = glsl.get_decoration(sampler.id, spv::Decoration::DecorationBinding);

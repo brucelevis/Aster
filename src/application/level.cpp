@@ -2,6 +2,7 @@
 
 #include <engine/assets/asset_storage.h>
 #include <engine/components/camera_component.h>
+#include <engine/components/sky_box_component.h>
 #include <engine/components/root_component.h>
 #include <engine/engine.h>
 
@@ -11,6 +12,40 @@
 
 namespace
 {
+  const std::string SkyboxStaticMeshName = "__SKY_BOX_STATIC_MESH";
+
+  std::vector<SkyBoxVertex> SkyboxVertices{
+    SkyBoxVertex{{-1.0f,-1.0f,1.0f}},
+    SkyBoxVertex{{1.0f,-1.0f,1.0f}},
+    SkyBoxVertex{{1.0f,1.0f,1.0f}},
+    SkyBoxVertex{{-1.0f, 1.0f, 1.0f}},
+    SkyBoxVertex{{-1.0f, 1.0f, -1.0f}},
+    SkyBoxVertex{{1.0f,1.0f,-1.0f}},
+    SkyBoxVertex{{1.0f,-1.0f,-1.0f}},
+    SkyBoxVertex{{-1.0f,-1.0f,-1.0f}},
+  };
+
+  std::vector<uint32_t> SkyboxIndices{
+    0,3,2,
+    2,1,0,
+
+    2,5,6,
+    6,1,2,
+
+    4,7,6,
+    6,5,4,
+
+    0,7,4,
+    4,3,0,
+
+    0,1,6,
+    6,7,0,
+
+    3,4,5,
+    5,2,3,
+
+  };
+
   template<class T>
   T GetValueOrDefault(const YAML::Node& node, const std::string& name, T defaultValue)
   {
@@ -55,7 +90,9 @@ LevelInitializationSystem::LevelInitializationSystem(Context* pContext, const YA
 
 void LevelInitializationSystem::Initialize()
 {
+  LoadDefaultMeshes();
   LoadMeshes(levelYaml);
+  LoadCubeMaps(levelYaml);
   CreateEntities(levelYaml);
 }
 
@@ -71,6 +108,34 @@ void LevelInitializationSystem::LoadMeshes(const YAML::Node& config)
     const std::string meshFile = mesh["mesh_file"].as<std::string>();
 
     assetStorage->LoadModel(meshFile, name);
+  }
+}
+
+void LevelInitializationSystem::LoadDefaultMeshes()
+{
+  AssetStorage* assetStorage = pContext->GetUserData<Engine*>()->GetAssetStorage();
+
+  const size_t vertSrcSize = SkyboxVertices.size() * sizeof(SkyBoxVertex);
+  const size_t indicesSrcSize = SkyboxIndices.size() * sizeof(uint32_t);
+
+  assetStorage->LoadStaticMesh(SkyboxVertices.data(), vertSrcSize, SkyboxIndices.data(), indicesSrcSize, SkyboxIndices.size(), SkyboxStaticMeshName);
+}
+
+void LevelInitializationSystem::LoadCubeMaps(const YAML::Node& config)
+{
+  AssetStorage* assetStorage = pContext->GetUserData<Engine*>()->GetAssetStorage();
+  const YAML::Node& cubeMaps = config["cube_maps"];
+
+  if (cubeMaps)
+  {
+    for (int i = 0; i < cubeMaps.size(); ++i)
+    {
+      const YAML::Node& cubeMap = cubeMaps[i];
+      const std::string name = cubeMap["name"].as<std::string>();
+      const std::string textureFile = cubeMap["texture_file"].as<std::string>();
+
+      assetStorage->LoadCubeMap(textureFile, name);
+    }
   }
 }
 
@@ -105,6 +170,9 @@ void LevelInitializationSystem::AddComponentToEntity(Entity* entity, const YAML:
 
   if (type == "static_mesh")
     AddStaticMeshComponentToEntity(entity, componentDescription);
+
+  if (type == "sky_box")
+    AddSkyBoxComponentToEntity(entity, componentDescription);
 }
 
 void LevelInitializationSystem::AddStaticMeshComponentToEntity(Entity* entity, const YAML::Node& componentDescription)
@@ -163,4 +231,24 @@ void LevelInitializationSystem::AddCameraComponentToEntity(Entity* entity, const
   camera->height = engineSettings.window.height;
   camera->zNear = zNear;
   camera->zFar = zFar;
+}
+
+void LevelInitializationSystem::AddSkyBoxComponentToEntity(Entity* entity, const YAML::Node& componentDescription)
+{
+  AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
+
+  const glm::vec3 scale = GetVec3OrDefault(componentDescription, "scale", { 100.0, 100.0, 100.0 });
+
+  const std::string cubeMapName = componentDescription["cube_map"].as<std::string>();
+  Image* cubeMap = as->GetCubeMap(cubeMapName);
+  StaticMesh* mesh = as->GetStaticMesh(SkyboxStaticMeshName);
+
+  if (cubeMap == nullptr)
+    throw std::runtime_error("there is no requested cube map.");
+
+
+  SkyBoxComponent* skybox = entity->AddComponent<SkyBoxComponent>("Sky Box Component");
+  skybox->skyboxMesh = mesh;
+  skybox->cubeMap = cubeMap;
+  skybox->transform.LocalScale = scale;
 }

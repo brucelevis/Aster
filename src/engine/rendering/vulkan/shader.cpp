@@ -12,6 +12,7 @@ namespace
     case UniformType::UniformBuffer:
       return vk::DescriptorType::eUniformBuffer;
 
+    case UniformType::SamplerCube:
     case UniformType::Sampler2D:
       return vk::DescriptorType::eCombinedImageSampler;
 
