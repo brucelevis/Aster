@@ -24,7 +24,7 @@ struct ImageAttachment
 
   inline bool operator<(const ImageAttachment& r) const
   {
-    return std::tie(id, format, view, type, initialLayout, finalLayout, loadOp, storeOp, usageFlags) <
-           std::tie(r.id, r.format, r.view, r.type, r.initialLayout, r.finalLayout, r.loadOp, r.storeOp, r.usageFlags);
+    return std::tie(id, format, type, initialLayout, finalLayout, loadOp, storeOp, usageFlags) <
+           std::tie(r.id, r.format, r.type, r.initialLayout, r.finalLayout, r.loadOp, r.storeOp, r.usageFlags);
   }
 };
