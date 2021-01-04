@@ -182,9 +182,28 @@ Image* AssetStorage::LoadCubeMap(const std::string& file, const std::string& cub
 
   Image cubeMap = vkCore.AllocateCubeMap(vk::Format::eR8G8B8A8Unorm, texture->pData, texture->dataSize, texture->baseWidth, texture->baseHeight, offsets);
 
-  cubeMaps.insert({ cubeMapName, std::move(cubeMap) });
+  textures.insert({ cubeMapName, std::move(cubeMap) });
 
-  return &cubeMaps.at(cubeMapName);
+  return &textures.at(cubeMapName);
+}
+
+void AssetStorage::LoadTexture(const std::string& file, const std::string& cubeMapName)
+{
+  ktxTexture* texture;
+
+  const KTX_error_code result = ktxTexture_CreateFromNamedFile(file.c_str(),
+    KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT,
+    &texture);
+
+  if (result)
+    throw std::runtime_error("failed to load texture");
+
+  textures.insert(
+    {
+      cubeMapName,
+      vkCore.Allocate2DImage(texture->pData, texture->dataSize, vk::Format::eR8G8B8A8Unorm, vk::Extent2D{ texture->baseWidth, texture->baseHeight }, vk::ImageUsageFlagBits::eSampled)
+    }
+  );
 }
 
 StaticModel* AssetStorage::LoadModel(const std::string& file, const std::string& modelName)

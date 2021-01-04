@@ -7,6 +7,8 @@
 class Buffer
 {
 public:
+  Buffer() = default;
+
   Buffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDeviceMemory&& memory, vk::DeviceSize memorySize);
 
   inline vk::Buffer GetBuffer() const 
@@ -31,6 +33,8 @@ protected:
 class HostBuffer : public Buffer
 {
 public:
+  HostBuffer() = default;
+
   HostBuffer(vk::Device logicalDevice, vk::UniqueBuffer&& buffer, vk::UniqueDeviceMemory&& memory, vk::DeviceSize memorySize);
 
   inline void* Map()

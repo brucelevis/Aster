@@ -22,6 +22,7 @@ public:
 private:
   void LoadMeshes(const YAML::Node& config);
   void LoadDefaultMeshes();
+  void LoadDefaultTextures();
   void LoadCubeMaps(const YAML::Node& config);
   void CreateEntities(const YAML::Node& config);
   void AddComponentToEntity(Entity* entity, const YAML::Node& componentDescription);

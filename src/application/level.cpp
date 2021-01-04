@@ -13,6 +13,8 @@
 namespace
 {
   const std::string SkyboxStaticMeshName = "__SKY_BOX_STATIC_MESH";
+  const std::string DefaultBlackTexture = "__DEFAULT_BLACK";
+  const std::string DefaultWhiteTexture = "__DEFAULT_WHITE";
 
   std::vector<SkyBoxVertex> SkyboxVertices{
     SkyBoxVertex{{-1.0f,-1.0f,1.0f}},
@@ -119,6 +121,14 @@ void LevelInitializationSystem::LoadDefaultMeshes()
   const size_t indicesSrcSize = SkyboxIndices.size() * sizeof(uint32_t);
 
   assetStorage->LoadStaticMesh(SkyboxVertices.data(), vertSrcSize, SkyboxIndices.data(), indicesSrcSize, SkyboxIndices.size(), SkyboxStaticMeshName);
+}
+
+void LevelInitializationSystem::LoadDefaultTextures()
+{
+  AssetStorage* assetStorage = pContext->GetUserData<Engine*>()->GetAssetStorage();
+
+  assetStorage->LoadTexture("../data/textures/defaults/black.ktx", DefaultBlackTexture);
+  assetStorage->LoadTexture("../data/textures/defaults/white.ktx", DefaultWhiteTexture);
 }
 
 void LevelInitializationSystem::LoadCubeMaps(const YAML::Node& config)
@@ -240,7 +250,7 @@ void LevelInitializationSystem::AddSkyBoxComponentToEntity(Entity* entity, const
   const glm::vec3 scale = GetVec3OrDefault(componentDescription, "scale", { 100.0, 100.0, 100.0 });
 
   const std::string cubeMapName = componentDescription["cube_map"].as<std::string>();
-  Image* cubeMap = as->GetCubeMap(cubeMapName);
+  Image* cubeMap = as->GetTexture(cubeMapName);
   StaticMesh* mesh = as->GetStaticMesh(SkyboxStaticMeshName);
 
   if (cubeMap == nullptr)
@@ -249,6 +259,9 @@ void LevelInitializationSystem::AddSkyBoxComponentToEntity(Entity* entity, const
 
   SkyBoxComponent* skybox = entity->AddComponent<SkyBoxComponent>("Sky Box Component");
   skybox->skyboxMesh = mesh;
+  skybox->material.colorTexture = as->GetTexture(DefaultBlackTexture);
+  skybox->material.colorTexture = as->GetTexture(DefaultBlackTexture);
+  skybox->material.colorTexture = as->GetTexture(DefaultBlackTexture);
   skybox->cubeMap = cubeMap;
   skybox->transform.LocalScale = scale;
 }

@@ -29,11 +29,14 @@ public:
   }
 
   Image* LoadCubeMap(const std::string& file, const std::string& cubeMapName);
-  inline Image* GetCubeMap(const std::string& cubeMapName)
-  {
-    const auto it = cubeMaps.find(cubeMapName);
 
-    if (it != cubeMaps.end())
+  void LoadTexture(const std::string& file, const std::string& textureName);
+
+  inline Image* GetTexture(const std::string& cubeMapName)
+  {
+    const auto it = textures.find(cubeMapName);
+
+    if (it != textures.end())
       return &it->second;
 
     return nullptr;

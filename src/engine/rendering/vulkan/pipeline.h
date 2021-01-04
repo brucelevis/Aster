@@ -13,6 +13,7 @@ struct DepthStencilSettings
 };
 
 constexpr DepthStencilSettings EnableDepthTest{ true, true };
+constexpr DepthStencilSettings DisableDepthTest{ false, false };
 
 class Pipeline
 {

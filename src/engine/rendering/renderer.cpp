@@ -20,6 +20,14 @@ namespace
     glm::mat4 view;
     glm::mat4 model;
   };
+
+  std::vector<QuadVertex> quadVertices{
+    QuadVertex{glm::vec2{-1.0f, -1.0f}},
+    QuadVertex{glm::vec2{1.0f, -1.0f}},
+    QuadVertex{glm::vec2{-1.0f, 1.0f}},
+    QuadVertex{glm::vec2{1.0f, 1.0f}},
+  };
+
 }
 
 RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
@@ -37,9 +45,9 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
   }
 
   {
-    Shader vertexShader = vkCore.CreateShader("static_mesh_vertex", ReadFile("../data/shaders/spirv/static_mesh.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader("static_mesh_fragment", ReadFile("../data/shaders/spirv/static_mesh.frag.spv"));
-    staticMeshShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+    Shader vertexShader = vkCore.CreateShader("deferred_light_vertex", ReadFile("../data/shaders/spirv/deferred_light.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader("deferred_light_fragment", ReadFile("../data/shaders/spirv/deferred_light.frag.spv"));
+    deferredLightProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 
   {
@@ -47,6 +55,9 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
     Shader fragmentShader = vkCore.CreateShader("sky_box_fragment", ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
     skyBoxShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
+
+  quadBuffer = vkCore.AllocateHostBuffer(sizeof(QuadVertex) * quadVertices.size(), vk::BufferUsageFlagBits::eVertexBuffer);
+  quadBuffer.UploadMemory(quadVertices.data(), quadVertices.size() * sizeof(QuadVertex), 0);
 }
 
 void RenderSystem::Update(const double dt)
@@ -120,73 +131,13 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
           }
         }
       }
-    });
-}
 
-void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
-{
-  rg->AddRenderSubpass()
-    .AddInputAttachment({ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment({ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment({ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment({ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment({ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddExistOutputColorAttachment(BACKBUFFER_RESOURCE_ID)
-    .AddDepthStencilAttachment("depth2")
-    .SetRenderCallback([&](FrameContext& context)
-    {
-      vk::CommandBuffer& commandBuffer = context.commandBuffer;
-      VertexInputDeclaration vid = StaticMeshVertex::GetVID();
-
-      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
-      UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderProgram);
-
-      commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
-
-      uniforms->SetSubpassInput("BaseColorTexture", context.GetImageView("GBUFFER_BaseColor"));
-      uniforms->SetSubpassInput("NormalTexture", context.GetImageView("GBUFFER_Normal"));
-      uniforms->SetSubpassInput("MetallicTexture", context.GetImageView("GBUFFER_Metallic"));
-      uniforms->SetSubpassInput("RoughnessTexture", context.GetImageView("GBUFFER_Roughness"));
-
-      for (Entity* e : staticMeshGroup->GetEntities())
-      {
-        if (e == nullptr)
-          continue;
-
-        for (auto* meshComponent : e->GetComponents<StaticMeshComponent>())
-        {
-          const glm::mat4 model = meshComponent->transform.GetTransformationMatrix();
-          const glm::mat4 view = camera->GetView();
-          const glm::mat4 projection = camera->GetProjection();
-
-          PerStaticMeshResource mvpResource;
-          mvpResource.mvp = projection * view * model;
-
-          uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
-
-          std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
-          commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-
-          for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
-          {
-            const StaticMesh& mesh = meshComponent->model->meshes[i];
-            const Material& meshMaterial = meshComponent->model->materials[i];
-
-            assert(meshMaterial.colorTexture != nullptr);
-
-            vk::DeviceSize offset = 0;
-            commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
-            commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
-            commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
-          }
-        }
-      }
-
+      //render skybox
       {
         SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<SkyBoxComponent>();
         VertexInputDeclaration vid = SkyBoxVertex::GetVID();
 
-        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 1, context);
+        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*skyBoxShaderProgram);
@@ -207,5 +158,38 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
         commandBuffer.bindIndexBuffer(skybox->skyboxMesh->indices.GetBuffer(), 0, vk::IndexType::eUint32);
         commandBuffer.drawIndexed(skybox->skyboxMesh->indexCount, 1, 0, 0, 0);
       }
+    });
+}
+
+void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
+{
+  rg->AddRenderSubpass()
+    .AddInputAttachment({ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddExistOutputColorAttachment(BACKBUFFER_RESOURCE_ID)
+    .SetRenderCallback([&](FrameContext& context)
+    {
+      vk::CommandBuffer& commandBuffer = context.commandBuffer;
+      VertexInputDeclaration vid = QuadVertex::GetVID();
+
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*deferredLightProgram, vid, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest, 1, context);
+      UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*deferredLightProgram);
+
+      commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
+
+      uniforms->SetSubpassInput("BaseColorTexture", context.GetImageView("GBUFFER_BaseColor"));
+      uniforms->SetSubpassInput("NormalTexture", context.GetImageView("GBUFFER_Normal"));
+      uniforms->SetSubpassInput("MetallicTexture", context.GetImageView("GBUFFER_Metallic"));
+      uniforms->SetSubpassInput("RoughnessTexture", context.GetImageView("GBUFFER_Roughness"));
+
+      std::vector<vk::DescriptorSet> descriptorSets = uniforms->GetUpdatedDescriptorSets();
+      commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+
+      vk::DeviceSize offset = 0;
+      commandBuffer.bindVertexBuffers(0, 1, &quadBuffer.GetBuffer(), &offset);
+      commandBuffer.draw(4, 1, 0, 0);
     });
 }
