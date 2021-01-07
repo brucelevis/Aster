@@ -126,6 +126,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
             commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
             vk::DeviceSize offset = 0;
             commandBuffer.bindVertexBuffers(0, 1, &mesh.vertices.GetBuffer(), &offset);
+            commandBuffer.bindVertexBuffers(1, 1, &mesh.tbnVectorsBuffer.GetBuffer(), &offset);
             commandBuffer.bindIndexBuffer(mesh.indices.GetBuffer(), 0, vk::IndexType::eUint32);
             commandBuffer.drawIndexed(mesh.indexCount, 1, 0, 0, 0);
           }

@@ -47,109 +47,181 @@ namespace
         return "UNKNOWN";
     }
   }
+
+  class AttributeAccessor
+  {
+  public:
+
+    AttributeAccessor(const tinygltf::Model& model, const tinygltf::Primitive& primitive, AttributeType type)
+    {
+      const int accessorIndex = type == AttributeType::Index
+        ? primitive.indices
+        : primitive.attributes.at(GetTypeString(type));
+
+      const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
+
+      const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+
+      componentType = accessor.componentType;
+
+      buf = reinterpret_cast<const float*>(model.buffers[bufferView.buffer].data.data() + bufferView.byteOffset + accessor.byteOffset);
+
+      stride = accessor.ByteStride(bufferView);
+      if (stride == -1)
+        throw std::runtime_error("failed to calculate stride.");
+
+      byteOffset = accessor.byteOffset + bufferView.byteOffset;
+
+      count = accessor.count;
+
+      i = 0;
+    }
+
+    AttributeAccessor(int componentType, const float* buf, int stride, int byteOffset, int count, int i)
+      : componentType(componentType)
+      , buf(buf)
+      , stride(stride)
+      , byteOffset(byteOffset)
+      , count(count)
+      , i(i)
+    {
+    }
+
+    inline int GetCount() const
+    {
+      return count;
+    }
+
+    AttributeAccessor operator++(int)
+    {
+      AttributeAccessor it{ componentType, buf, stride, byteOffset,count,i };
+      ++i;
+
+      return it;
+    }
+
+    operator glm::vec3() const
+    {
+      const int typedStride = stride / sizeof(float);
+      return glm::vec3{ buf[i * typedStride + 0], buf[i * typedStride + 1], buf[i * typedStride + 2] };
+    }
+
+    operator glm::vec2() const
+    {
+      const int typedStride = stride / sizeof(float);
+      return glm::vec2{ buf[i * typedStride + 0], buf[i * typedStride + 1] };
+    }
+
+    operator uint32_t() const
+    {
+      switch (componentType)
+      {
+      case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+      {
+        return reinterpret_cast<const unsigned char*>(buf)[i];
+      }
+
+      case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+      {
+        return reinterpret_cast<const unsigned short*>(buf)[i];
+      }
+
+      case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+      {
+        return reinterpret_cast<const unsigned int*>(buf)[i];
+      }
+
+      default:
+        throw std::runtime_error("unsupported index type.");
+      }
+    }
+
+  private:
+    int componentType;
+    const float* buf;
+    int stride;
+    int byteOffset;
+    int count;
+    int i;
+  };
+
+
+  std::tuple<std::vector<StaticMeshVertex>, std::vector<uint32_t>> GatherVertices(const tinygltf::Model& model, const tinygltf::Mesh& mesh)
+  {
+    std::vector<StaticMeshVertex> vertices;
+    std::vector<uint32_t> indices;
+
+    for (tinygltf::Primitive primitive : mesh.primitives)
+    {
+      if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
+        throw std::runtime_error("unsupported primitive type.");
+
+      AttributeAccessor posAccessor(model, primitive, AttributeType::Position);
+      AttributeAccessor uvAccessor(model, primitive, AttributeType::UV);
+      AttributeAccessor indexAccessor(model, primitive, AttributeType::Index);
+
+      for (int i = 0; i < posAccessor.GetCount(); ++i)
+      {
+        StaticMeshVertex vertex;
+        vertex.position = posAccessor++;
+        vertex.uv = uvAccessor++;
+
+        vertices.push_back(vertex);
+      }
+
+      for (int i = 0; i < indexAccessor.GetCount(); ++i)
+        indices.push_back(indexAccessor++);
+    }
+
+    return { std::move(vertices), std::move(indices) };
+  }
+
+
+  std::vector<TBNVectors> GenerateTBNVectors(const std::vector<StaticMeshVertex>& vertices, const std::vector<uint32_t>& indices)
+  {
+    std::vector<TBNVectors> tbnVectors;
+
+    for (int i = 0; i < indices.size(); i += 3)
+    {
+      const auto& p0 = vertices[indices[i]];
+      const auto& p1 = vertices[indices[i + 1]];
+      const auto& p2 = vertices[indices[i + 2]];
+
+      const float dU1 = p1.uv.x - p0.uv.x;
+      const float dV1 = p1.uv.y - p0.uv.y;
+
+      const float dU2 = p2.uv.x - p1.uv.x;
+      const float dV2 = p2.uv.y - p1.uv.y;
+
+      const glm::vec3 p1p0 = p1.position - p0.position;
+      const glm::vec3 p2p1 = p2.position - p1.position;
+
+      glm::mat3x2 edges{
+        {p1p0.x, p2p1.x}, {p1p0.y, p2p1.y}, {p1p0.z, p2p1.z}
+      };
+
+      const glm::mat2x2 m = glm::inverse(glm::mat2x2{ {dU1, dU2}, {dV1, dV2} });
+
+      const glm::mat2x3 tb = m * edges;
+
+      const glm::vec3 tangent = glm::normalize(tb[0]);
+      const glm::vec3 bitangent = glm::normalize(tb[1]);
+      const glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
+
+      //each vector inside a face will have the same t b n
+      tbnVectors.push_back({ tangent, bitangent, normal });
+      tbnVectors.push_back({ tangent, bitangent, normal });
+      tbnVectors.push_back({ tangent, bitangent, normal });
+    }
+
+    return tbnVectors;
+  }
 }
 
 AssetStorage::AssetStorage(Core& vkCore)
   : vkCore(vkCore)
 {
 }
-
-class AttributeAccessor
-{
-public:
-
-  AttributeAccessor(const tinygltf::Model& model, const tinygltf::Primitive& primitive, AttributeType type)
-  {
-    const int accessorIndex = type == AttributeType::Index 
-                                   ? primitive.indices 
-                                   : primitive.attributes.at(GetTypeString(type));
-
-    const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
-
-    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-
-    componentType = accessor.componentType;
-
-    buf = reinterpret_cast<const float*>(model.buffers[bufferView.buffer].data.data() + bufferView.byteOffset + accessor.byteOffset);
-
-    stride = accessor.ByteStride(bufferView);
-    if (stride == -1)
-      throw std::runtime_error("failed to calculate stride.");
-
-    byteOffset = accessor.byteOffset + bufferView.byteOffset;
-
-    count = accessor.count;
-
-    i = 0;
-  }
-
-  AttributeAccessor(int componentType, const float* buf, int stride, int byteOffset, int count, int i)
-    : componentType(componentType)
-    , buf(buf)
-    , stride(stride)
-    , byteOffset(byteOffset)
-    , count(count)
-    , i(i)
-  {
-  }
-
-  inline int GetCount() const
-  {
-    return count;
-  }
-
-  AttributeAccessor operator++(int)
-  {
-    AttributeAccessor it{ componentType, buf, stride, byteOffset,count,i };
-    ++i;
-
-    return it;
-  }
-
-  operator glm::vec3() const
-  {
-    const int typedStride = stride / sizeof(float);
-    return glm::vec3{ buf[i * typedStride + 0], buf[i * typedStride + 1], buf[i * typedStride + 2] };
-  }
-
-  operator glm::vec2() const
-  {
-    const int typedStride = stride / sizeof(float);
-    return glm::vec2{ buf[i * typedStride + 0], buf[i * typedStride + 1]};
-  }
-
-  operator uint32_t() const
-  {
-    switch (componentType)
-    {
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
-    {
-      return reinterpret_cast<const unsigned char*>(buf)[i];
-    }
-
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-    {
-      return reinterpret_cast<const unsigned short*>(buf)[i];
-    }
-
-    case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-    {
-      return reinterpret_cast<const unsigned int*>(buf)[i];
-    }
-
-    default:
-      throw std::runtime_error("unsupported index type.");
-    }
-  }
-
-private:
-  int componentType;
-  const float* buf;
-  int stride;
-  int byteOffset;
-  int count;
-  int i;
-};
 
 Image* AssetStorage::LoadCubeMap(const std::string& file, const std::string& cubeMapName)
 {
@@ -261,34 +333,12 @@ StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::
 
   for (tinygltf::Mesh mesh : model.meshes)
   {
-    std::vector<StaticMeshVertex> vertices;
-    std::vector<uint32_t> indices;
-
-    for (tinygltf::Primitive primitive : mesh.primitives)
-    {
-      if (primitive.mode != TINYGLTF_MODE_TRIANGLES)
-        throw std::runtime_error("unsupported primitive type.");
-
-      AttributeAccessor posAccessor(model, primitive, AttributeType::Position);
-      AttributeAccessor normalAccessor(model, primitive, AttributeType::Normal);
-      AttributeAccessor uvAccessor(model, primitive, AttributeType::UV);
-      AttributeAccessor indexAccessor(model, primitive, AttributeType::Index);
-
-      for (int i = 0; i < posAccessor.GetCount(); ++i)
-      {
-        vertices.push_back({
-          posAccessor++,
-          normalAccessor++,
-          uvAccessor++,
-          });
-      }
-
-      for (int i = 0; i < indexAccessor.GetCount(); ++i)
-        indices.push_back(indexAccessor++);
-    }
+    const auto [vertices, indices] = GatherVertices(model, mesh);
+    const auto tbnVectors = GenerateTBNVectors(vertices, indices);
 
     Buffer vertexBuffer = vkCore.AllocateDeviceBuffer(vertices.data(), vertices.size() * sizeof(StaticMeshVertex), vk::BufferUsageFlagBits::eVertexBuffer);
     Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indices.data(), indices.size() * sizeof(uint32_t), vk::BufferUsageFlagBits::eIndexBuffer);
+    Buffer tbnVectorsBuffer = vkCore.AllocateDeviceBuffer(tbnVectors.data(), tbnVectors.size() * sizeof(TBNVectors), vk::BufferUsageFlagBits::eVertexBuffer);
 
     Material material;
     const tinygltf::Material& gltfMaterial = model.materials[0];
@@ -306,6 +356,7 @@ StaticModel AssetStorage::ProcessModel(const tinygltf::Model& model, const std::
       StaticMesh{
         std::move(vertexBuffer),
         std::move(indexBuffer),
+        std::move(tbnVectorsBuffer),
         static_cast<uint32_t>(indices.size())
       }
     );
@@ -321,11 +372,12 @@ void AssetStorage::LoadStaticMesh(void* vertexSrc, size_t vertexSrcSize, void* i
   Buffer indexBuffer = vkCore.AllocateDeviceBuffer(indexSrc, indexSrcSize, vk::BufferUsageFlagBits::eIndexBuffer);
 
   staticMeshes.insert({
-    meshName, 
+    meshName,
     StaticMesh{
       std::move(vertexBuffer),
       std::move(indexBuffer),
+      Buffer{},
       static_cast<uint32_t>(indexCount)
     }
-  });
+    });
 }

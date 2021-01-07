@@ -14,6 +14,7 @@ struct StaticMesh
 {
   Buffer vertices;
   Buffer indices;
+  Buffer tbnVectorsBuffer;
   unsigned int indexCount = 0;
 };
 
