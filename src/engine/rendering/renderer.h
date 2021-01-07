@@ -36,6 +36,4 @@ private:
   std::unique_ptr<ShaderProgram> staticMeshShaderGbufferProgram;
   std::unique_ptr<ShaderProgram> skyBoxShaderProgram;
   std::unique_ptr<ShaderProgram> deferredLightProgram;
-
-  HostBuffer quadBuffer;
 };

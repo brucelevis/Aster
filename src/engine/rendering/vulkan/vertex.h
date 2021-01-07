@@ -45,17 +45,3 @@ struct SkyBoxVertex
     return vid;
   }
 };
-
-struct QuadVertex
-{
-  glm::vec2 position;
-
-  static inline VertexInputDeclaration GetVID()
-  {
-    VertexInputDeclaration vid;
-    vid.AddBindingDescription(0, sizeof(QuadVertex));
-    vid.AddAttributeDescription(vk::Format::eR32G32Sfloat, 0, 0, offsetof(QuadVertex,position));
-
-    return vid;
-  }
-};

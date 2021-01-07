@@ -20,14 +20,6 @@ namespace
     glm::mat4 view;
     glm::mat4 model;
   };
-
-  std::vector<QuadVertex> quadVertices{
-    QuadVertex{glm::vec2{-1.0f, -1.0f}},
-    QuadVertex{glm::vec2{1.0f, -1.0f}},
-    QuadVertex{glm::vec2{-1.0f, 1.0f}},
-    QuadVertex{glm::vec2{1.0f, 1.0f}},
-  };
-
 }
 
 RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
@@ -55,9 +47,6 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
     Shader fragmentShader = vkCore.CreateShader("sky_box_fragment", ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
     skyBoxShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
-
-  quadBuffer = vkCore.AllocateHostBuffer(sizeof(QuadVertex) * quadVertices.size(), vk::BufferUsageFlagBits::eVertexBuffer);
-  quadBuffer.UploadMemory(quadVertices.data(), quadVertices.size() * sizeof(QuadVertex), 0);
 }
 
 void RenderSystem::Update(const double dt)
@@ -174,9 +163,8 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
     .SetRenderCallback([&](FrameContext& context)
     {
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
-      VertexInputDeclaration vid = QuadVertex::GetVID();
 
-      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*deferredLightProgram, vid, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest, 1, context);
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*deferredLightProgram, VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest, 1, context);
       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*deferredLightProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
@@ -190,7 +178,6 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
       commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline->GetLayout(), 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 
       vk::DeviceSize offset = 0;
-      commandBuffer.bindVertexBuffers(0, 1, &quadBuffer.GetBuffer(), &offset);
       commandBuffer.draw(4, 1, 0, 0);
     });
 }
