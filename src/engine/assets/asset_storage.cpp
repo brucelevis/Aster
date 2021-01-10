@@ -229,7 +229,7 @@ namespace
 
       const glm::vec3 tangent = glm::normalize(glm::vec3{tb[0][0], tb[1][0], tb[2][0]});
       const glm::vec3 bitangent = glm::normalize(glm::vec3{ tb[0][1], tb[1][1], tb[2][1] });
-      const glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
+      const glm::vec3 normal = glm::normalize(glm::cross(p2p0, p1p0));
 
       //each vector inside a face will have the same t b n
       averageVectors[indices[i]].push_back({ tangent, bitangent, normal });
