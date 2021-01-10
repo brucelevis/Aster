@@ -122,7 +122,7 @@ glm::vec3 Transform::GetOrientationVector(OrientationVectorType type) const
   switch (type)
   {
   case OrientationVectorType::Forward:
-    return glm::vec3{ mat * glm::vec4{ 0.0f, 0.0f, -1.0f, 0.0f } };
+    return glm::vec3{ mat * glm::vec4{ 0.0f, 0.0f, 1.0f, 0.0f } };
 
   case OrientationVectorType::Right:
     return glm::vec3{ mat * glm::vec4{ 1.0f, 0.0f, 0.0f, 0.0f } };

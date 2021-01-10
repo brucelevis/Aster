@@ -4,7 +4,6 @@
 
 #include <ecs/BaseSystems.h>
 
-#include <glm/glm.hpp>
 #include <memory>
 
 class Context;

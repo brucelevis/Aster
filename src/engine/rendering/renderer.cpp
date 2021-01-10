@@ -11,7 +11,9 @@ namespace
 {
   struct PerStaticMeshResource
   {
-    glm::mat4 mvp;
+    glm::mat4 projection;
+    glm::mat4 view;
+    glm::mat4 model;
   };
 
   struct SkyboxPerFrameResource
@@ -96,7 +98,9 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
           const glm::mat4 projection = camera->GetProjection();
 
           PerStaticMeshResource mvpResource;
-          mvpResource.mvp = projection * view * model;
+          mvpResource.projection = projection;
+          mvpResource.view = view;
+          mvpResource.model = model;
 
           uniforms->SetUniformBuffer("PerStaticMeshResource", &mvpResource);
 

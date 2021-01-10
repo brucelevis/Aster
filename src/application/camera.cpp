@@ -76,7 +76,7 @@ void CameraMovementSystem::Rotate(float dx, float dy)
 
   if (dx > 0 || dx < 0)
   {
-    angleX += dx * 0.1;
+    angleX -= dx * 0.1;
 
     if (angleX > 360.0f || angleX < -360.0f)
       angleX = 0.0f;
@@ -84,7 +84,7 @@ void CameraMovementSystem::Rotate(float dx, float dy)
 
   if (dy > 0 || dy < 0)
   {
-    angleY += dy * 0.1;
+    angleY -= dy * 0.1;
 
     if (angleY > 90.0f)
       angleY = 90.0f;

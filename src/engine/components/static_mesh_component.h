@@ -7,7 +7,6 @@
 
 #include <ecs/BaseComponent.h>
 
-#include <glm/glm.hpp>
 #include <vector>
 
 struct StaticMesh

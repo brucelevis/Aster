@@ -1,7 +1,6 @@
 #pragma once
 
 #include "vertex_input_declaration.h"
-#include <glm/glm.hpp>
 
 struct TBNVectors
 {

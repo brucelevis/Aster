@@ -173,6 +173,26 @@ namespace
         indices.push_back(indexAccessor++);
     }
 
+    /*
+      from gltf2 specification(Coordinate System and Units): https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#coordinate-system-and-units
+      glTF uses a right-handed coordinate system, that is, the cross product of +X and +Y yields +Z. 
+      glTF defines +Y as up. The front of a glTF asset faces +Z.
+      Positive rotation is counterclockwise.
+
+      Engine uses clockwise as positive rotation where -Y is down
+      to achieve this one need to invert X and Y for every vertex
+      and swap first and last index in the face.
+    */
+
+    for (auto& v : vertices)
+    {
+      v.position.x *= -1.0f;
+      v.position.y *= -1.0f;
+    }
+
+    for (size_t i = 0; i < indices.size(); i += 3)
+      std::swap(indices[i], indices[i + 2]);
+
     return { std::move(vertices), std::move(indices) };
   }
 
@@ -180,8 +200,12 @@ namespace
   std::vector<TBNVectors> GenerateTBNVectors(const std::vector<StaticMeshVertex>& vertices, const std::vector<uint32_t>& indices)
   {
     std::vector<TBNVectors> tbnVectors;
+    tbnVectors.resize(vertices.size());
 
-    for (int i = 0; i < indices.size(); i += 3)
+    std::vector<std::vector<TBNVectors>> averageVectors;
+    averageVectors.resize(vertices.size());
+
+    for (size_t i = 0; i < indices.size(); i += 3)
     {
       const auto& p0 = vertices[indices[i]];
       const auto& p1 = vertices[indices[i + 1]];
@@ -190,28 +214,44 @@ namespace
       const float dU1 = p1.uv.x - p0.uv.x;
       const float dV1 = p1.uv.y - p0.uv.y;
 
-      const float dU2 = p2.uv.x - p1.uv.x;
-      const float dV2 = p2.uv.y - p1.uv.y;
+      const float dU2 = p2.uv.x - p0.uv.x;
+      const float dV2 = p2.uv.y - p0.uv.y;
 
       const glm::vec3 p1p0 = p1.position - p0.position;
-      const glm::vec3 p2p1 = p2.position - p1.position;
+      const glm::vec3 p2p0 = p2.position - p0.position;
 
       glm::mat3x2 edges{
-        {p1p0.x, p2p1.x}, {p1p0.y, p2p1.y}, {p1p0.z, p2p1.z}
+        {p1p0.x, p2p0.x}, {p1p0.y, p2p0.y}, {p1p0.z, p2p0.z}
       };
 
       const glm::mat2x2 m = glm::inverse(glm::mat2x2{ {dU1, dU2}, {dV1, dV2} });
+      const glm::mat3x2 tb = m * edges;
 
-      const glm::mat2x3 tb = m * edges;
-
-      const glm::vec3 tangent = glm::normalize(tb[0]);
-      const glm::vec3 bitangent = glm::normalize(tb[1]);
+      const glm::vec3 tangent = glm::normalize(glm::vec3{tb[0][0], tb[1][0], tb[2][0]});
+      const glm::vec3 bitangent = glm::normalize(glm::vec3{ tb[0][1], tb[1][1], tb[2][1] });
       const glm::vec3 normal = glm::normalize(glm::cross(bitangent, tangent));
 
       //each vector inside a face will have the same t b n
-      tbnVectors.push_back({ tangent, bitangent, normal });
-      tbnVectors.push_back({ tangent, bitangent, normal });
-      tbnVectors.push_back({ tangent, bitangent, normal });
+      averageVectors[indices[i]].push_back({ tangent, bitangent, normal });
+      averageVectors[indices[i+1]].push_back({ tangent, bitangent, normal });
+      averageVectors[indices[i+2]].push_back({ tangent, bitangent, normal });
+    }
+
+    for (size_t i = 0; i < averageVectors.size(); ++i)
+    {
+      const std::vector<TBNVectors>& perVertexVectors = averageVectors[i];
+      TBNVectors& average = tbnVectors[i];
+
+      for (const auto& vectors : perVertexVectors)
+      {
+        average.tangent += vectors.tangent;
+        average.bitangent += vectors.bitangent;
+        average.normal += vectors.normal;
+      }
+
+      average.tangent = glm::normalize(average.tangent);
+      average.bitangent = glm::normalize(average.bitangent);
+      average.normal = glm::normalize(average.normal);
     }
 
     return tbnVectors;

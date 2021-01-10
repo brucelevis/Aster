@@ -27,7 +27,7 @@ application:
       - type: static_mesh
         mesh: damaged_helmet
         position: [0.0, 0.0, 5.0]
-        rotation: [90.0, 45.0, 0.0]
+        rotation: [-90.0, 180.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     - components:
@@ -39,4 +39,5 @@ application:
       - type: static_mesh
         mesh: test_normals
         position: [0.0, 0.0, 2.0]
+        rotation: [0.0, 180, 0.0]
         scale: [1.0, 1.0, 1.0]
