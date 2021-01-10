@@ -8,6 +8,8 @@ application:
   meshes:
     - name: damaged_helmet
       mesh_file: ../data/meshes/gltf-samples/2.0/DamagedHelmet/glTF/DamagedHelmet.gltf
+    - name: test_normals
+      mesh_file: ../data/meshes/gltf-samples/2.0/NormalTangentTest/glTF/NormalTangentTest.gltf
 
   cube_maps:
     - name: cubemap_yokohama
@@ -24,11 +26,17 @@ application:
     - components:
       - type: static_mesh
         mesh: damaged_helmet
-        position: [0.0, 0.0, -5.0]
-        rotation: [-90.0, 180, 0.0]
+        position: [0.0, 0.0, 5.0]
+        rotation: [90.0, 45.0, 0.0]
         scale: [1.0, 1.0, 1.0]
 
     - components:
       - type: sky_box
         cube_map: cubemap_yokohama
         scale: [100, 100, 100]
+
+    - components:
+      - type: static_mesh
+        mesh: test_normals
+        position: [0.0, 0.0, 2.0]
+        scale: [1.0, 1.0, 1.0]
