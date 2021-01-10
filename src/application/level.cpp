@@ -236,7 +236,7 @@ void LevelInitializationSystem::AddCameraComponentToEntity(Entity* entity, const
   CameraComponent* camera = entity->AddComponent<CameraComponent>("Camera Component");
   camera->transform.LocalPosition = position;
   camera->transform.LocalRotation = EulerToQuat(rotation);
-  camera->angle = glm::radians(fov);
+  camera->angle = fov;
   camera->width = engineSettings.window.width;
   camera->height = engineSettings.window.height;
   camera->zNear = zNear;

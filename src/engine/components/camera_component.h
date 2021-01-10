@@ -4,8 +4,6 @@
 
 #include <ecs/BaseComponent.h>
 
-#include <glm/glm.hpp>
-
 struct CameraComponent : public BaseComponent
 {
   Transform transform;
