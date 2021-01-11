@@ -1,19 +1,12 @@
 #pragma once
 
 #include "Shader.h"
+#include "common.h"
 
 #include <vulkan/vulkan.hpp>
 
 class VertexInputDeclaration;
-
-struct DepthStencilSettings
-{
-  bool depthTestEnabled = false;
-  bool depthWriteEnabled = false;
-};
-
-constexpr DepthStencilSettings EnableDepthTest{ true, true };
-constexpr DepthStencilSettings DisableDepthTest{ false, false };
+class DepthStencilSettings;
 
 class Pipeline
 {

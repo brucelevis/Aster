@@ -28,3 +28,12 @@ struct ImageAttachment
            std::tie(r.id, r.format, r.type, r.initialLayout, r.finalLayout, r.loadOp, r.storeOp, r.usageFlags);
   }
 };
+
+struct DepthStencilSettings
+{
+  bool depthTestEnabled = false;
+  bool depthWriteEnabled = false;
+};
+
+constexpr DepthStencilSettings EnableDepthTest{ true, true };
+constexpr DepthStencilSettings DisableDepthTest{ false, false };
