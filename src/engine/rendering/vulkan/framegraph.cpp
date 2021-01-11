@@ -1,6 +1,12 @@
 #include "framegraph.h"
 #include "core.h"
 
+SubpassInput::SubpassInput(const ResourceId& id, vk::ImageLayout layout)
+  : id(id)
+  , layout(layout)
+{
+}
+
 RenderSubpass::RenderSubpass(unsigned int id)
   : id(id)
 {

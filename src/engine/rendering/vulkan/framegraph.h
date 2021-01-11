@@ -27,6 +27,8 @@ typedef unsigned int AttachmentId;
 
 struct SubpassInput
 {
+  SubpassInput(const ResourceId& id, vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
+
   ResourceId id;
   vk::ImageLayout layout;
 };
