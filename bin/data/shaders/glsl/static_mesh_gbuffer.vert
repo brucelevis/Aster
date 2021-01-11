@@ -10,6 +10,7 @@ layout(location = 0) out vec3 tangent_out;
 layout(location = 1) out vec3 bitangent_out;
 layout(location = 2) out vec3 normal_out;
 layout(location = 3) out vec2 uv_out;
+layout(location = 4) out vec3 worldPosition;
 
 layout(set=0, binding=0) uniform PerStaticMeshResource {
    mat4 Projection;
@@ -23,6 +24,7 @@ void main()
   bitangent_out = normalize(vec3(Model * vec4(bitangent, 0.0f)));
   normal_out = normalize(vec3(Model * vec4(normal, 0.0f)));
   uv_out = uv;
+  worldPosition = vec3(Model * vec4(position, 1.0f));
 
   gl_Position = Projection * View * Model * vec4(position, 1.0);
 }

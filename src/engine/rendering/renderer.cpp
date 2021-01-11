@@ -71,7 +71,8 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
 {
   rg->AddRenderSubpass()
     .AddNewOutputColorAttachment("GBUFFER_BaseColor")
-    .AddNewOutputColorAttachment("GBUFFER_Normal")
+    .AddNewOutputColorAttachment("GBUFFER_WorldPosition")
+    .AddNewOutputColorAttachment("GBUFFER_WorldNormal")
     .AddNewOutputColorAttachment("GBUFFER_Metallic")
     .AddNewOutputColorAttachment("GBUFFER_Roughness")
     .AddNewOutputColorAttachment("GBUFFER_Depth")
@@ -81,7 +82,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
       VertexInputDeclaration vid = StaticMeshVertex::GetVID();
 
-      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 6, context);
       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderGbufferProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
@@ -131,7 +132,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
         SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<SkyBoxComponent>();
         VertexInputDeclaration vid = SkyBoxVertex::GetVID();
 
-        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 5, context);
+        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 6, context);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*skyBoxShaderProgram);
@@ -159,7 +160,8 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
 {
   rg->AddRenderSubpass()
     .AddInputAttachment({ "GBUFFER_BaseColor", vk::ImageLayout::eShaderReadOnlyOptimal })
-    .AddInputAttachment({ "GBUFFER_Normal", vk::ImageLayout::eShaderReadOnlyOptimal })
+    .AddInputAttachment({ "GBUFFER_WorldPosition", vk::ImageLayout::eShaderReadOnlyOptimal})
+    .AddInputAttachment({ "GBUFFER_WorldNormal", vk::ImageLayout::eShaderReadOnlyOptimal })
     .AddInputAttachment({ "GBUFFER_Metallic", vk::ImageLayout::eShaderReadOnlyOptimal })
     .AddInputAttachment({ "GBUFFER_Roughness", vk::ImageLayout::eShaderReadOnlyOptimal })
     .AddInputAttachment({ "GBUFFER_Depth", vk::ImageLayout::eShaderReadOnlyOptimal })
@@ -174,7 +176,8 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
       uniforms->SetSubpassInput("BaseColorTexture", context.GetImageView("GBUFFER_BaseColor"));
-      uniforms->SetSubpassInput("NormalTexture", context.GetImageView("GBUFFER_Normal"));
+      uniforms->SetSubpassInput("WorldPositionTexture", context.GetImageView("GBUFFER_WorldPosition"));
+      uniforms->SetSubpassInput("WorldNormalTexture", context.GetImageView("GBUFFER_WorldNormal"));
       uniforms->SetSubpassInput("MetallicTexture", context.GetImageView("GBUFFER_Metallic"));
       uniforms->SetSubpassInput("RoughnessTexture", context.GetImageView("GBUFFER_Roughness"));
 
