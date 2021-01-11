@@ -22,6 +22,7 @@ struct FrameContext
   vk::Framebuffer framebuffer;
   vk::CommandBuffer commandBuffer;
   uint32_t subpassNumber;
+  uint16_t outputColorAttachmentsNumber;
 
 private:
   RenderGraph* renderGraph;

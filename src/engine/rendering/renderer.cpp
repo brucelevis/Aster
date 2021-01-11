@@ -82,7 +82,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
       VertexInputDeclaration vid = StaticMeshVertex::GetVID();
 
-      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 6, context);
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, context);
       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*staticMeshShaderGbufferProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
@@ -132,7 +132,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
         SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<SkyBoxComponent>();
         VertexInputDeclaration vid = SkyBoxVertex::GetVID();
 
-        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, 6, context);
+        Pipeline* pipeline = context.pipelineStorage->GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest, context);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*skyBoxShaderProgram);
@@ -170,7 +170,7 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
     {
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
 
-      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*deferredLightProgram, VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest, 1, context);
+      Pipeline* pipeline = context.pipelineStorage->GetPipeline(*deferredLightProgram, VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest, context);
       UniformsAccessor* uniforms = context.uniformsAccessorStorage->GetUniformsAccessor(*deferredLightProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());

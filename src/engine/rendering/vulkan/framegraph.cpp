@@ -234,6 +234,7 @@ void RenderGraph::Execute()
     const RenderSubpass& subpass = subpasses[i];
 
     context.subpassNumber = subpass.id;
+    context.outputColorAttachmentsNumber = subpass.outputColorAttachments.size();
     subpass.renderCallback(context);
 
     if (i != (subpasses.size() - 1))

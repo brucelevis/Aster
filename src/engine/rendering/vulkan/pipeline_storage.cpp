@@ -100,7 +100,7 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program,
   return pipeline;
 }
 
-Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, uint32_t attachmentsCount,const FrameContext& frameContext)
+Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext)
 {
-  return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, attachmentsCount);
+  return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, frameContext.outputColorAttachmentsNumber);
 }

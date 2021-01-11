@@ -52,7 +52,7 @@ public:
   PipelineStorage(Core& core);
 
   Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const vk::Extent2D& viewportExtent, vk::RenderPass renderPass, uint32_t subpassNumber, uint32_t attachmentsCount);
-  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, uint32_t attachmentsCount, const FrameContext& frameContext);
+  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext);
 
 private:
   Core& core;
