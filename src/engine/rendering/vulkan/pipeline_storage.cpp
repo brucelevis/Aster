@@ -10,15 +10,9 @@ namespace vk
   }
 }
 
-PipelineKey& PipelineKey::SetVertexShaderName(const std::string& s)
+PipelineKey& PipelineKey::SetShaderProgramId(const std::string& id)
 {
-  vertexShader = s;
-  return *this;
-}
-
-PipelineKey& PipelineKey::SetFragmentShaderName(const std::string s)
-{
-  fragmentShader = s;
+  shaderProgramId = id;
   return *this;
 }
 
@@ -66,8 +60,8 @@ PipelineKey& PipelineKey::SetAttachmentsCount(const uint32_t a)
 
 bool PipelineKey::operator<(const PipelineKey& r) const
 {
-  return std::tie(vertexShader, fragmentShader, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, attachmentsCount) <
-    std::tie(r.vertexShader, r.fragmentShader, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.attachmentsCount);
+  return std::tie(shaderProgramId, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, attachmentsCount) <
+    std::tie(r.shaderProgramId,r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.attachmentsCount);
 }
 
 PipelineStorage::PipelineStorage(Core& core)
@@ -85,8 +79,7 @@ Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program,
                                        uint32_t attachmentsCount)
 {
   const auto key = PipelineKey()
-    .SetVertexShaderName(program.GetVertexShader().GetName())
-    .SetFragmentShaderName(program.GetFragmentShader().GetName())
+    .SetShaderProgramId(program.GetID())
     .SetVertexInputDeclaration(vertexInputDeclaration)
     .SetTopology(topology)
     .SetDepthStencilSettings(depthStencilSettings)

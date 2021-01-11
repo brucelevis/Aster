@@ -206,9 +206,9 @@ vk::Format Core::GetDebugSurfaceFormat()
   return swapchain->GetImageFormat();
 }
 
-Shader Core::CreateShader(const std::string& name, const std::vector<uint32_t>& byteCode)
+Shader Core::CreateShader(const std::vector<uint32_t>& byteCode)
 {
-  return Shader(logicalDevice.get(), name, byteCode);
+  return Shader(logicalDevice.get(), byteCode);
 }
 
 RenderGraph* Core::BeginFrame()

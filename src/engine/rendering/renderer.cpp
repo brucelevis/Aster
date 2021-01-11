@@ -33,20 +33,20 @@ RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
   skyboxGroup = ctx->GetGroup<SkyBoxComponent>();
 
   {
-    Shader vertexShader = vkCore.CreateShader("static_mesh_gbuffer_vertex", ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader("static_mesh_gbuffer_fragment", ReadFile("../data/shaders/spirv/static_mesh_gbuffer.frag.spv"));
+    Shader vertexShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/static_mesh_gbuffer.frag.spv"));
     staticMeshShaderGbufferProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 
   {
-    Shader vertexShader = vkCore.CreateShader("deferred_light_vertex", ReadFile("../data/shaders/spirv/deferred_light.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader("deferred_light_fragment", ReadFile("../data/shaders/spirv/deferred_light.frag.spv"));
+    Shader vertexShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/deferred_light.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/deferred_light.frag.spv"));
     deferredLightProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 
   {
-    Shader vertexShader = vkCore.CreateShader("sky_box_vertex", ReadFile("../data/shaders/spirv/sky_box.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader("sky_box_fragment", ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
+    Shader vertexShader = vkCore.CreateShader( ReadFile("../data/shaders/spirv/sky_box.vert.spv"));
+    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
     skyBoxShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 }

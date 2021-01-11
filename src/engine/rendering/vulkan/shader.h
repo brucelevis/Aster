@@ -11,11 +11,9 @@ class Core;
 class Shader
 {
 public:
-  Shader(vk::Device logicalDevice, const std::string& name, const std::vector<uint32_t>& byteCode);
+  Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode);
 
   vk::ShaderModule GetModule() const;
-
-  std::string GetName() const;
 
   inline const PipelineUniforms& GetUniformsDescriptions() const
   {
@@ -23,7 +21,6 @@ public:
   }
 
 private:
-  std::string name;
   vk::UniqueShaderModule shaderModule;
 
   PipelineUniforms uniforms;
@@ -55,6 +52,11 @@ public:
     return layouts;
   }
 
+  inline std::string GetID() const
+  {
+    return id;
+  }
+
 private:
   std::vector<vk::DescriptorSetLayout> CreateLayouts(Core& core, const PipelineUniforms& uniforms) const;
 
@@ -66,4 +68,6 @@ private:
 
   PipelineUniforms uniforms;
   std::vector<vk::DescriptorSetLayout> layouts;
+
+  std::string id;
 };

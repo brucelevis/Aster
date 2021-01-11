@@ -17,9 +17,7 @@ class PipelineKey
 {
   friend class PipelineStorage;
 public:
-  PipelineKey& SetVertexShaderName(const std::string& s);
-
-  PipelineKey& SetFragmentShaderName(const std::string s);
+  PipelineKey& SetShaderProgramId(const std::string& id);
 
   PipelineKey& SetVertexInputDeclaration(const VertexInputDeclaration& d);
 
@@ -38,8 +36,7 @@ public:
   bool operator<(const PipelineKey& r) const;
 
 private:
-  std::string vertexShader;
-  std::string fragmentShader;
+  std::string shaderProgramId;
   VertexInputDeclaration vertexInputDeclaration;
   vk::PrimitiveTopology topology;
   DepthStencilSettings depthStencilSettings;

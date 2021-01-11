@@ -1,6 +1,8 @@
 #include "Shader.h"
 #include "core.h"
 
+#include <engine/utils/utils.h>
+
 #include <iostream>
 
 namespace
@@ -38,11 +40,9 @@ namespace
   }
 }
 
-Shader::Shader(vk::Device logicalDevice, const std::string& name, const std::vector<uint32_t>& byteCode)
+Shader::Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode)
 {
   uniforms = SpirvParser().ParseShader(byteCode);
-
-  this->name = name;
 
   const auto shaderModuleCreateInfo = vk::ShaderModuleCreateInfo()
     .setCodeSize(byteCode.size() * sizeof(uint32_t))
@@ -56,16 +56,12 @@ vk::ShaderModule Shader::GetModule() const
   return shaderModule.get();
 }
 
-std::string Shader::GetName() const
-{
-  return name;
-}
-
 ShaderProgram::ShaderProgram(Core& core, Shader&& v, Shader&& fr)
   : core(core)
   , vertex(std::move(v))
   , fragment(std::move(fr))
 {
+  id = Utils::UUID();
   uniforms = vertex.GetUniformsDescriptions() + fragment.GetUniformsDescriptions();
   layouts = CreateLayouts(core, uniforms);
 }

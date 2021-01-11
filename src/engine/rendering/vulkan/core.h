@@ -49,7 +49,7 @@ public:
 
   vk::Format GetDebugSurfaceFormat();
 
-  Shader CreateShader(const std::string& name, const std::vector<uint32_t>& byteCode);
+  Shader CreateShader(const std::vector<uint32_t>& byteCode);
 
   RenderGraph* BeginFrame();
 
