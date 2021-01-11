@@ -1,0 +1,4 @@
+build/*
+bin/Debug/*
+bin/Release/*
+bin/data/shaders/spirv/*
