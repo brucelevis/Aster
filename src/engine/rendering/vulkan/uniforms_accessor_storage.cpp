@@ -2,29 +2,32 @@
 #include "core.h"
 #include "shader.h"
 
-UniformsAccessorStorage::UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool)
-  : core(core)
-  , descriptorPool(descriptorPool)
+namespace RHI::Vulkan
 {
-}
-
-UniformsAccessor* UniformsAccessorStorage::GetUniformsAccessor(const ShaderProgram& program)
-{
-  const PipelineUniforms& uniforms = program.GetCombinedUniformsInformation();
-  const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
-
-  const auto it = contexts.find(uniforms);
-  if (it != contexts.end())
+  UniformsAccessorStorage::UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool)
+    : core(core)
+    , descriptorPool(descriptorPool)
   {
-    return it->second.get();
   }
 
-  contexts[uniforms] = std::make_unique<UniformsAccessor>(core, descriptorPool, layouts, uniforms);
+  UniformsAccessor* UniformsAccessorStorage::GetUniformsAccessor(const ShaderProgram& program)
+  {
+    const PipelineUniforms& uniforms = program.GetCombinedUniformsInformation();
+    const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
-  return contexts.at(uniforms).get();
-}
+    const auto it = contexts.find(uniforms);
+    if (it != contexts.end())
+    {
+      return it->second.get();
+    }
 
-void UniformsAccessorStorage::Reset()
-{
-  contexts.clear();
+    contexts[uniforms] = std::make_unique<UniformsAccessor>(core, descriptorPool, layouts, uniforms);
+
+    return contexts.at(uniforms).get();
+  }
+
+  void UniformsAccessorStorage::Reset()
+  {
+    contexts.clear();
+  }
 }

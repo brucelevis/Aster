@@ -16,15 +16,15 @@ namespace
   const std::string DefaultBlackTexture = "__DEFAULT_BLACK";
   const std::string DefaultWhiteTexture = "__DEFAULT_WHITE";
 
-  std::vector<SkyBoxVertex> SkyboxVertices{
-    SkyBoxVertex{{-1.0f,-1.0f,1.0f}},
-    SkyBoxVertex{{1.0f,-1.0f,1.0f}},
-    SkyBoxVertex{{1.0f,1.0f,1.0f}},
-    SkyBoxVertex{{-1.0f, 1.0f, 1.0f}},
-    SkyBoxVertex{{-1.0f, 1.0f, -1.0f}},
-    SkyBoxVertex{{1.0f,1.0f,-1.0f}},
-    SkyBoxVertex{{1.0f,-1.0f,-1.0f}},
-    SkyBoxVertex{{-1.0f,-1.0f,-1.0f}},
+  std::vector<RHI::Vulkan::SkyBoxVertex> SkyboxVertices{
+    RHI::Vulkan::SkyBoxVertex{{-1.0f,-1.0f,1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{1.0f,-1.0f,1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{1.0f,1.0f,1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{-1.0f, 1.0f, 1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{-1.0f, 1.0f, -1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{1.0f,1.0f,-1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{1.0f,-1.0f,-1.0f}},
+    RHI::Vulkan::SkyBoxVertex{{-1.0f,-1.0f,-1.0f}},
   };
 
   std::vector<uint32_t> SkyboxIndices{
@@ -117,7 +117,7 @@ void LevelInitializationSystem::LoadDefaultMeshes()
 {
   AssetStorage* assetStorage = pContext->GetUserData<Engine*>()->GetAssetStorage();
 
-  const size_t vertSrcSize = SkyboxVertices.size() * sizeof(SkyBoxVertex);
+  const size_t vertSrcSize = SkyboxVertices.size() * sizeof(RHI::Vulkan::SkyBoxVertex);
   const size_t indicesSrcSize = SkyboxIndices.size() * sizeof(uint32_t);
 
   assetStorage->LoadStaticMesh(SkyboxVertices.data(), vertSrcSize, SkyboxIndices.data(), indicesSrcSize, SkyboxIndices.size(), SkyboxStaticMeshName);
@@ -197,7 +197,7 @@ void LevelInitializationSystem::AddStaticMeshComponentToEntity(Entity* entity, c
 
   AssetStorage* as = pContext->GetUserData<Engine*>()->GetAssetStorage();
 
-  StaticMeshComponent* staticMesh = entity->AddComponent<StaticMeshComponent>("Static Mesh");
+  RHI::Vulkan::StaticMeshComponent* staticMesh = entity->AddComponent<RHI::Vulkan::StaticMeshComponent>("Static Mesh");
   staticMesh->model = as->GetStaticModel(meshName);
 
   staticMesh->transform.LocalPosition = position;
@@ -250,14 +250,14 @@ void LevelInitializationSystem::AddSkyBoxComponentToEntity(Entity* entity, const
   const glm::vec3 scale = GetVec3OrDefault(componentDescription, "scale", { 100.0, 100.0, 100.0 });
 
   const std::string cubeMapName = componentDescription["cube_map"].as<std::string>();
-  Image* cubeMap = as->GetTexture(cubeMapName);
-  StaticMesh* mesh = as->GetStaticMesh(SkyboxStaticMeshName);
+  RHI::Vulkan::Image* cubeMap = as->GetTexture(cubeMapName);
+  RHI::Vulkan::StaticMesh* mesh = as->GetStaticMesh(SkyboxStaticMeshName);
 
   if (cubeMap == nullptr)
     throw std::runtime_error("there is no requested cube map.");
 
 
-  SkyBoxComponent* skybox = entity->AddComponent<SkyBoxComponent>("Sky Box Component");
+  RHI::Vulkan::SkyBoxComponent* skybox = entity->AddComponent<RHI::Vulkan::SkyBoxComponent>("Sky Box Component");
   skybox->skyboxMesh = mesh;
   skybox->material.colorTexture = as->GetTexture(DefaultBlackTexture);
   skybox->material.colorTexture = as->GetTexture(DefaultBlackTexture);

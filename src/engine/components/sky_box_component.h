@@ -5,13 +5,16 @@
 
 #include <ecs/BaseComponent.h>
 
-class Image;
-struct StaticMesh;
-
-struct SkyBoxComponent : public BaseComponent
+namespace RHI::Vulkan
 {
-  Transform transform;
-  Image* cubeMap;
-  StaticMesh* skyboxMesh;
-  Material material;
-};
+  class Image;
+  struct StaticMesh;
+
+  struct SkyBoxComponent : public BaseComponent
+  {
+    Transform transform;
+    Image* cubeMap;
+    StaticMesh* skyboxMesh;
+    Material material;
+  };
+}

@@ -7,18 +7,18 @@
 
 namespace
 {
-  vk::DescriptorType GetDescriptorType(UniformType type)
+  vk::DescriptorType GetDescriptorType(RHI::Vulkan::UniformType type)
   {
     switch (type)
     {
-    case UniformType::UniformBuffer:
+    case RHI::Vulkan::UniformType::UniformBuffer:
       return vk::DescriptorType::eUniformBuffer;
 
-    case UniformType::SamplerCube:
-    case UniformType::Sampler2D:
+    case RHI::Vulkan::UniformType::SamplerCube:
+    case RHI::Vulkan::UniformType::Sampler2D:
       return vk::DescriptorType::eCombinedImageSampler;
 
-    case UniformType::SubpassInput:
+    case RHI::Vulkan::UniformType::SubpassInput:
       return vk::DescriptorType::eInputAttachment;
 
     default:
@@ -26,7 +26,7 @@ namespace
     }
   }
 
-  vk::ShaderStageFlags GetShaderStageFlag(ShaderStages stages)
+  vk::ShaderStageFlags GetShaderStageFlag(RHI::Vulkan::ShaderStages stages)
   {
     vk::ShaderStageFlags bits;
 
@@ -40,75 +40,78 @@ namespace
   }
 }
 
-Shader::Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode)
+namespace RHI::Vulkan
 {
-  uniforms = SpirvParser().ParseShader(byteCode);
-
-  const auto shaderModuleCreateInfo = vk::ShaderModuleCreateInfo()
-    .setCodeSize(byteCode.size() * sizeof(uint32_t))
-    .setPCode(byteCode.data());
-
-  shaderModule = logicalDevice.createShaderModuleUnique(shaderModuleCreateInfo);
-}
-
-vk::ShaderModule Shader::GetModule() const
-{
-  return shaderModule.get();
-}
-
-ShaderProgram::ShaderProgram(Core& core, Shader&& v, Shader&& fr)
-  : core(core)
-  , vertex(std::move(v))
-  , fragment(std::move(fr))
-{
-  id = Utils::UUID();
-  uniforms = vertex.GetUniformsDescriptions() + fragment.GetUniformsDescriptions();
-  layouts = CreateLayouts(core, uniforms);
-}
-
-ShaderProgram::~ShaderProgram()
-{
-  for (const vk::DescriptorSetLayout& layout : layouts)
+  Shader::Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode)
   {
-    core.GetLogicalDevice().destroyDescriptorSetLayout(layout);
+    uniforms = SpirvParser().ParseShader(byteCode);
+
+    const auto shaderModuleCreateInfo = vk::ShaderModuleCreateInfo()
+      .setCodeSize(byteCode.size() * sizeof(uint32_t))
+      .setPCode(byteCode.data());
+
+    shaderModule = logicalDevice.createShaderModuleUnique(shaderModuleCreateInfo);
   }
-}
 
-std::vector<vk::DescriptorSetLayout> ShaderProgram::CreateLayouts(Core& core, const PipelineUniforms& uniforms) const
-{
-  std::vector<vk::DescriptorSetLayout> layouts;
-
-  layouts.reserve(uniforms.sets.size());
-
-  for (int i = 0; i < uniforms.sets.size(); ++i)
+  vk::ShaderModule Shader::GetModule() const
   {
-    const UniformSetDescription& set = uniforms.sets[i];
+    return shaderModule.get();
+  }
 
-    std::vector<vk::DescriptorSetLayoutBinding> bindings;
-    for (int j = 0; j < set.bindings.size(); ++j)
+  ShaderProgram::ShaderProgram(Core& core, Shader&& v, Shader&& fr)
+    : core(core)
+    , vertex(std::move(v))
+    , fragment(std::move(fr))
+  {
+    id = Utils::UUID();
+    uniforms = vertex.GetUniformsDescriptions() + fragment.GetUniformsDescriptions();
+    layouts = CreateLayouts(core, uniforms);
+  }
+
+  ShaderProgram::~ShaderProgram()
+  {
+    for (const vk::DescriptorSetLayout& layout : layouts)
     {
-      const UniformBindingDescription& binding = set.bindings[j];
+      core.GetLogicalDevice().destroyDescriptorSetLayout(layout);
+    }
+  }
 
-      if (binding.type == UniformType::None)
-        continue;
+  std::vector<vk::DescriptorSetLayout> ShaderProgram::CreateLayouts(Core& core, const PipelineUniforms& uniforms) const
+  {
+    std::vector<vk::DescriptorSetLayout> layouts;
 
-      const auto bindingDescription = vk::DescriptorSetLayoutBinding()
-        .setBinding(j)
-        .setDescriptorCount(1)
-        .setDescriptorType(GetDescriptorType(binding.type))
-        .setStageFlags(GetShaderStageFlag(binding.stages));
+    layouts.reserve(uniforms.sets.size());
 
-      bindings.push_back(bindingDescription);
+    for (int i = 0; i < uniforms.sets.size(); ++i)
+    {
+      const UniformSetDescription& set = uniforms.sets[i];
+
+      std::vector<vk::DescriptorSetLayoutBinding> bindings;
+      for (int j = 0; j < set.bindings.size(); ++j)
+      {
+        const UniformBindingDescription& binding = set.bindings[j];
+
+        if (binding.type == UniformType::None)
+          continue;
+
+        const auto bindingDescription = vk::DescriptorSetLayoutBinding()
+          .setBinding(j)
+          .setDescriptorCount(1)
+          .setDescriptorType(GetDescriptorType(binding.type))
+          .setStageFlags(GetShaderStageFlag(binding.stages));
+
+        bindings.push_back(bindingDescription);
+      }
+
+      const auto layoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
+        .setBindingCount(bindings.size())
+        .setPBindings(bindings.data());
+      //.setFlags()
+
+      vk::DescriptorSetLayout layout = core.GetLogicalDevice().createDescriptorSetLayout(layoutCreateInfo);
+      layouts.push_back(layout);
     }
 
-    const auto layoutCreateInfo = vk::DescriptorSetLayoutCreateInfo()
-      .setBindingCount(bindings.size())
-      .setPBindings(bindings.data());
-    //.setFlags()
-
-    vk::DescriptorSetLayout layout = core.GetLogicalDevice().createDescriptorSetLayout(layoutCreateInfo);
-    layouts.push_back(layout);
+    return layouts;
   }
-
-  return layouts;
 }

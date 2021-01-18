@@ -4,32 +4,35 @@
 
 #include <vulkan/vulkan.hpp>
 
-class RenderGraph;
-class UniformsAccessor;
-class UniformsAccessorStorage;
-class PipelineStorage;
-class ImageView;
-class Pipeline;
-class ShaderProgram;
-class VertexInputDeclaration;
-
-struct FrameContext
+namespace RHI::Vulkan
 {
-  friend class RenderGraph;
+  class RenderGraph;
+  class UniformsAccessor;
+  class UniformsAccessorStorage;
+  class PipelineStorage;
+  class ImageView;
+  class Pipeline;
+  class ShaderProgram;
+  class VertexInputDeclaration;
 
-  const ImageView& GetImageView(const ResourceId& id) const;
-  Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings);
-  UniformsAccessor* GetUniformsAccessor(const ShaderProgram& program);
+  struct FrameContext
+  {
+    friend class RenderGraph;
 
-  vk::Extent2D BackbufferSize;
-  UniformsAccessorStorage* uniformsAccessorStorage;
-  PipelineStorage* pipelineStorage;
-  vk::RenderPass renderPass;
-  vk::Framebuffer framebuffer;
-  vk::CommandBuffer commandBuffer;
-  uint32_t subpassNumber;
-  uint16_t outputColorAttachmentsNumber;
+    const ImageView& GetImageView(const ResourceId& id) const;
+    Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings);
+    UniformsAccessor* GetUniformsAccessor(const ShaderProgram& program);
 
-private:
-  RenderGraph* renderGraph;
-};
+    vk::Extent2D BackbufferSize;
+    UniformsAccessorStorage* uniformsAccessorStorage;
+    PipelineStorage* pipelineStorage;
+    vk::RenderPass renderPass;
+    vk::Framebuffer framebuffer;
+    vk::CommandBuffer commandBuffer;
+    uint32_t subpassNumber;
+    uint16_t outputColorAttachmentsNumber;
+
+  private:
+    RenderGraph* renderGraph;
+  };
+}

@@ -5,89 +5,93 @@
 #include <tuple>
 #include <vector>
 
-enum class UniformType
+namespace RHI::Vulkan
 {
-  None,
-  UniformBuffer,
-  Sampler2D,
-  SamplerCube,
-  SubpassInput,
-};
-
-typedef unsigned int ShaderStages;
-#define SHADER_VERTEX_STAGE (ShaderStages) 0x1
-#define SHADER_FRAGMENT_STAGE (ShaderStages) 0x2
-#define HAS_STAGE(v, s) (v & s)
-
-struct UniformBindingDescription
-{
-  UniformType type = UniformType::None;
-  ShaderStages stages = 0;
-  size_t size = 0;
-
-  inline bool IsEqualWithoutStages(const UniformBindingDescription& r)
+  enum class UniformType
   {
-    return std::tie(type, size) != std::tie(r.type, size);
-  }
+    None,
+    UniformBuffer,
+    Sampler2D,
+    SamplerCube,
+    SubpassInput,
+  };
 
-  inline bool operator<(const UniformBindingDescription& r) const
+  typedef unsigned int ShaderStages;
+  #define SHADER_VERTEX_STAGE (RHI::Vulkan::ShaderStages) 0x1
+  #define SHADER_FRAGMENT_STAGE (RHI::Vulkan::ShaderStages) 0x2
+  #define HAS_STAGE(v, s) (v & s)
+
+  struct UniformBindingDescription
   {
-    return std::tie(type, stages, size) < std::tie(r.type, r.stages, r.size);
-  }
-};
+    UniformType type = UniformType::None;
+    ShaderStages stages = 0;
+    size_t size = 0;
 
-struct UniformSetDescription
-{
-  bool inUse = false;
-  std::vector<UniformBindingDescription> bindings;
+    inline bool IsEqualWithoutStages(const UniformBindingDescription& r)
+    {
+      return std::tie(type, size) != std::tie(r.type, size);
+    }
 
-  inline bool operator< (const UniformSetDescription& r) const
+    inline bool operator<(const UniformBindingDescription& r) const
+    {
+      return std::tie(type, stages, size) < std::tie(r.type, r.stages, r.size);
+    }
+  };
+
+  struct UniformSetDescription
   {
-    return std::tie(inUse, bindings) < std::tie(r.inUse, r.bindings);
-  }
-};
+    bool inUse = false;
+    std::vector<UniformBindingDescription> bindings;
 
-typedef std::string UniformName;
+    inline bool operator< (const UniformSetDescription& r) const
+    {
+      return std::tie(inUse, bindings) < std::tie(r.inUse, r.bindings);
+    }
+  };
 
-struct UniformSetPair
-{
-  unsigned int set = 0;
-  unsigned int binding = 0;
+  typedef std::string UniformName;
 
-  inline bool operator< (const UniformSetPair& r) const
+  struct UniformSetPair
   {
-    return  std::tie(set, binding) < std::tie(r.set, r.binding);
-  }
+    unsigned int set = 0;
+    unsigned int binding = 0;
 
-  inline bool operator != (const UniformSetPair& r) const
+    inline bool operator< (const UniformSetPair& r) const
+    {
+      return  std::tie(set, binding) < std::tie(r.set, r.binding);
+    }
+
+    inline bool operator != (const UniformSetPair& r) const
+    {
+      return std::tie(set, binding) != std::tie(r.set, r.binding);
+    }
+  };
+
+  struct PipelineUniforms
   {
-    return std::tie(set, binding) != std::tie(r.set, r.binding);
-  }
-};
+    std::vector<UniformSetDescription> sets;
+    std::map<UniformName, UniformSetPair> uniformsMap;
 
-struct PipelineUniforms
-{
-  std::vector<UniformSetDescription> sets;
-  std::map<UniformName, UniformSetPair> uniformsMap;
+    void AddUniform(unsigned int set, unsigned int binding, const std::string& name, const UniformBindingDescription& description);
 
-  void AddUniform(unsigned int set, unsigned int binding, const std::string& name, const UniformBindingDescription& description);
+    const UniformBindingDescription& GetBindingDescription(const unsigned int set, const unsigned int binding) const;
 
-  const UniformBindingDescription& GetBindingDescription(const unsigned int set, const unsigned int binding) const;
+    const UniformBindingDescription& GetBindingDescription(const UniformName& name) const;
 
-  const UniformBindingDescription& GetBindingDescription(const UniformName& name) const;
+    const UniformSetPair& GetSetBindingPair(const UniformName& name) const;
 
-  const UniformSetPair& GetSetBindingPair(const UniformName& name) const;
+    inline bool operator<(const PipelineUniforms& r) const
+    {
+      return sets < r.sets;
+    }
+  };
 
-  inline bool operator<(const PipelineUniforms& r) const
+  PipelineUniforms operator+(const PipelineUniforms& l, const PipelineUniforms& r);
+
+  class SpirvParser
   {
-    return sets < r.sets;
-  }
-};
+  public:
+    PipelineUniforms ParseShader(const std::vector<uint32_t>& byteCode) const;
+  };
 
-PipelineUniforms operator+(const PipelineUniforms& l, const PipelineUniforms& r);
-
-class SpirvParser
-{
-public:
-  PipelineUniforms ParseShader(const std::vector<uint32_t>& byteCode) const;
-};
+}

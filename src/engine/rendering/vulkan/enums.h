@@ -1,11 +1,14 @@
 #pragma once
 
-enum class ImageType
+namespace RHI::Vulkan
 {
-  Present,
-  DepthOnlyAttachment,
-  StencilOnlyAttachment,
-  DepthStencilAttachment,
-  SubpassInput,
-  OutputColorAttachment
-};
+  enum class ImageType
+  {
+    Present,
+    DepthOnlyAttachment,
+    StencilOnlyAttachment,
+    DepthStencilAttachment,
+    SubpassInput,
+    OutputColorAttachment
+  };
+}

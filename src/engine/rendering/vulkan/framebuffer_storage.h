@@ -7,37 +7,40 @@
 #include <tuple>
 #include <map>
 
-struct FramebufferKey
+namespace RHI::Vulkan
 {
-  vk::RenderPass renderPass;
-  std::vector<vk::ImageView> attachments;
-  uint32_t width;
-  uint32_t height;
-  uint32_t layers;
+  struct FramebufferKey
+  {
+    vk::RenderPass renderPass;
+    std::vector<vk::ImageView> attachments;
+    uint32_t width;
+    uint32_t height;
+    uint32_t layers;
 
-  bool operator< (const FramebufferKey& r) const;
+    bool operator< (const FramebufferKey& r) const;
 
-  FramebufferKey& SetRenderPass(vk::RenderPass renderPass);
+    FramebufferKey& SetRenderPass(vk::RenderPass renderPass);
 
-  FramebufferKey& SetAttachments(const std::vector<vk::ImageView>& attachments);
+    FramebufferKey& SetAttachments(const std::vector<vk::ImageView>& attachments);
 
-  FramebufferKey& SetWidth(uint32_t width);
+    FramebufferKey& SetWidth(uint32_t width);
 
-  FramebufferKey& SetHeight(uint32_t height);
+    FramebufferKey& SetHeight(uint32_t height);
 
-  FramebufferKey& SetLayers(uint32_t layers);
-};
+    FramebufferKey& SetLayers(uint32_t layers);
+  };
 
-class FramebufferStorage
-{
-public:
-  FramebufferStorage(vk::Device logicalDevice);
+  class FramebufferStorage
+  {
+  public:
+    FramebufferStorage(vk::Device logicalDevice);
 
-  vk::Framebuffer GetFramebuffer(const FramebufferKey& key);
+    vk::Framebuffer GetFramebuffer(const FramebufferKey& key);
 
-  vk::Framebuffer AddNewFramebuffer(const FramebufferKey& key);
+    vk::Framebuffer AddNewFramebuffer(const FramebufferKey& key);
 
-private:
-  vk::Device logicalDevice;
-  std::map<FramebufferKey, vk::UniqueFramebuffer> storage;
-};
+  private:
+    vk::Device logicalDevice;
+    std::map<FramebufferKey, vk::UniqueFramebuffer> storage;
+  };
+}

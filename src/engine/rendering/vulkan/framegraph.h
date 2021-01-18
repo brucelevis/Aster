@@ -14,144 +14,148 @@
 #include <set>
 #include <optional>
 
-class Core;
-class PipelineStorage;
-class FramebufferStorage;
-class RenderPassStorage;
-class UniformsAccessorStorage;
-
-typedef unsigned int SubpassId;
-typedef unsigned int AttachmentId;
-
-#define BACKBUFFER_RESOURCE_ID ResourceId("__backbuffer_resource")
-
-struct SubpassInput
+namespace RHI::Vulkan
 {
-  SubpassInput(const ResourceId& id, vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
+  class Core;
+  class PipelineStorage;
+  class FramebufferStorage;
+  class RenderPassStorage;
+  class UniformsAccessorStorage;
 
-  ResourceId id;
-  vk::ImageLayout layout;
-};
+  typedef unsigned int SubpassId;
+  typedef unsigned int AttachmentId;
 
-struct DepthStencilAttachmentDescription
-{
-  ResourceId id;
-};
+  #define BACKBUFFER_RESOURCE_ID RHI::Vulkan::ResourceId("__backbuffer_resource")
 
-struct OutputColorAttachmentDescription
-{
-  ResourceId id;
-};
-
-class ITask
-{
-public:
-  virtual void Execute() = 0;
-};
-
-typedef std::function<void(FrameContext&)> RenderPassExecutionFunction;
-
-// Rendering task
-// describes a unique subpass of Render Pass
-class RenderSubpass
-{
-  friend class RenderGraph;
-public:
-  RenderSubpass(unsigned int id);
-
-  RenderSubpass& AddInputAttachment(const SubpassInput& desc);
-
-  RenderSubpass& AddInputSampler();
-
-  RenderSubpass& AddInputBuffer();
-
-  RenderSubpass& AddNewOutputColorAttachment(const ResourceId& id, vk::Format format = vk::Format::eUndefined);
-
-  RenderSubpass& AddExistOutputColorAttachment(const ResourceId& id);
-
-  RenderSubpass& AddDepthOnlyAttachment(const ResourceId& id);
-
-  RenderSubpass& AddDepthStencilAttachment(const ResourceId& id);
-
-  RenderSubpass& AddOutputBuffer();
-
-  RenderSubpass& AddOutputSampler();
-
-  RenderSubpass& SetRenderCallback(RenderPassExecutionFunction callback);
-
-private:
-  const unsigned int id;
-  RenderPassExecutionFunction renderCallback;
-  std::vector<SubpassInput> inputAttachments;
-  std::vector<ResourceId> outputColorAttachments;
-
-  std::vector<ImageAttachment> imageAttachmentCreateInfos;
-  std::optional<ImageAttachment> depthStencilAttachment;
-};
-
-struct BackbufferDescription
-{
-  vk::Format format;
-  vk::Extent2D size;
-
-  BackbufferDescription& SetFormat(vk::Format f)
+  struct SubpassInput
   {
-    format = f;
-    return *this;
-  }
+    SubpassInput(const ResourceId& id, vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal);
 
-  BackbufferDescription& SetSize(const vk::Extent2D& s)
+    ResourceId id;
+    vk::ImageLayout layout;
+  };
+
+  struct DepthStencilAttachmentDescription
   {
-    size = s;
-    return *this;
-  }
-};
+    ResourceId id;
+  };
 
-class RenderGraph
-{
-public:
-  RenderGraph(Core& core);
+  struct OutputColorAttachmentDescription
+  {
+    ResourceId id;
+  };
 
-  RenderSubpass& AddRenderSubpass();
+  class ITask
+  {
+  public:
+    virtual void Execute() = 0;
+  };
 
-  void Compile();
+  typedef std::function<void(FrameContext&)> RenderPassExecutionFunction;
 
-  void AddAttachmentResource(const ImageAttachment& attachment);
+  // Rendering task
+  // describes a unique subpass of Render Pass
+  class RenderSubpass
+  {
+    friend class RenderGraph;
+  public:
+    RenderSubpass(unsigned int id);
 
-  void SetBackbufferDescription(const BackbufferDescription& bfDescription);
+    RenderSubpass& AddInputAttachment(const SubpassInput& desc);
 
-  void SetCommandBuffer(vk::CommandBuffer cmdBuf);
+    RenderSubpass& AddInputSampler();
 
-  void SetUniformsAccessorStorage(UniformsAccessorStorage* s);
+    RenderSubpass& AddInputBuffer();
 
-  void Reset();
+    RenderSubpass& AddNewOutputColorAttachment(const ResourceId& id, vk::Format format = vk::Format::eUndefined);
 
-  void Execute();
+    RenderSubpass& AddExistOutputColorAttachment(const ResourceId& id);
 
-  const ImageView& GetImageView(const ResourceId& id) const;
-private:
-  std::vector<vk::SubpassDependency> GetAttachmentDependencies();
+    RenderSubpass& AddDepthOnlyAttachment(const ResourceId& id);
 
-  vk::RenderPass CreateRenderpass();
+    RenderSubpass& AddDepthStencilAttachment(const ResourceId& id);
 
-  vk::Framebuffer CreateFramebuffer();
+    RenderSubpass& AddOutputBuffer();
 
-  void AllocateSubpassesResources();
+    RenderSubpass& AddOutputSampler();
 
-private:
-  Core& core;
+    RenderSubpass& SetRenderCallback(RenderPassExecutionFunction callback);
 
-  UniformsAccessorStorage* uaStorage;
-  vk::CommandBuffer cmdBuffer;
-  BackbufferDescription backbufferDescription;
-  std::vector<RenderSubpass> subpasses;
+  private:
+    const unsigned int id;
+    RenderPassExecutionFunction renderCallback;
+    std::vector<SubpassInput> inputAttachments;
+    std::vector<ResourceId> outputColorAttachments;
 
-  std::map<ResourceId, AttachmentId> resourceIdToAttachmentIdMap;
-  std::vector<ImageAttachment> imageAttachments;
+    std::vector<ImageAttachment> imageAttachmentCreateInfos;
+    std::optional<ImageAttachment> depthStencilAttachment;
+  };
 
-  std::vector<Image> ownedImages;
+  struct BackbufferDescription
+  {
+    vk::Format format;
+    vk::Extent2D size;
 
-  vk::RenderPass renderPass;
-  vk::Framebuffer framebuffer;
-};
+    BackbufferDescription& SetFormat(vk::Format f)
+    {
+      format = f;
+      return *this;
+    }
 
+    BackbufferDescription& SetSize(const vk::Extent2D& s)
+    {
+      size = s;
+      return *this;
+    }
+  };
+
+  class RenderGraph
+  {
+  public:
+    RenderGraph(Core& core);
+
+    RenderSubpass& AddRenderSubpass();
+
+    void Compile();
+
+    void AddAttachmentResource(const ImageAttachment& attachment);
+
+    void SetBackbufferDescription(const BackbufferDescription& bfDescription);
+
+    void SetCommandBuffer(vk::CommandBuffer cmdBuf);
+
+    void SetUniformsAccessorStorage(UniformsAccessorStorage* s);
+
+    void Reset();
+
+    void Execute();
+
+    const ImageView& GetImageView(const ResourceId& id) const;
+  private:
+    std::vector<vk::SubpassDependency> GetAttachmentDependencies();
+
+    vk::RenderPass CreateRenderpass();
+
+    vk::Framebuffer CreateFramebuffer();
+
+    void AllocateSubpassesResources();
+
+  private:
+    Core& core;
+
+    UniformsAccessorStorage* uaStorage;
+    vk::CommandBuffer cmdBuffer;
+    BackbufferDescription backbufferDescription;
+    std::vector<RenderSubpass> subpasses;
+
+    std::map<ResourceId, AttachmentId> resourceIdToAttachmentIdMap;
+    std::vector<ImageAttachment> imageAttachments;
+
+    std::vector<Image> ownedImages;
+
+    vk::RenderPass renderPass;
+    vk::Framebuffer framebuffer;
+  };
+
+
+}

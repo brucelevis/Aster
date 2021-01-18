@@ -5,21 +5,24 @@
 #include <vulkan/vulkan.hpp>
 #include <map>
 
-class Core;
-class ShaderProgram;
-
-class UniformsAccessorStorage
+namespace RHI::Vulkan
 {
-public:
-  UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool);
+  class Core;
+  class ShaderProgram;
 
-  UniformsAccessor* GetUniformsAccessor(const ShaderProgram& program);
+  class UniformsAccessorStorage
+  {
+  public:
+    UniformsAccessorStorage(Core& core, vk::DescriptorPool descriptorPool);
 
-  void Reset();
+    UniformsAccessor* GetUniformsAccessor(const ShaderProgram& program);
 
-private:
-  Core& core;
-  vk::DescriptorPool descriptorPool;
+    void Reset();
 
-  std::map<PipelineUniforms, std::unique_ptr<UniformsAccessor>> contexts;
-};
+  private:
+    Core& core;
+    vk::DescriptorPool descriptorPool;
+
+    std::map<PipelineUniforms, std::unique_ptr<UniformsAccessor>> contexts;
+  };
+}

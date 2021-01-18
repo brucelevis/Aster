@@ -24,30 +24,30 @@ namespace
   };
 }
 
-RenderSystem::RenderSystem(Context* ctx, Core& vkCore)
+RenderSystem::RenderSystem(Context* ctx, RHI::Vulkan::Core& vkCore)
   : LogicSystem(ctx)
   , vkCore(vkCore)
 {
   cameraGroup = ctx->GetGroup<CameraComponent>();
-  staticMeshGroup = ctx->GetGroup<StaticMeshComponent>();
-  skyboxGroup = ctx->GetGroup<SkyBoxComponent>();
+  staticMeshGroup = ctx->GetGroup<RHI::Vulkan::StaticMeshComponent>();
+  skyboxGroup = ctx->GetGroup<RHI::Vulkan::SkyBoxComponent>();
 
   {
-    Shader vertexShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/static_mesh_gbuffer.frag.spv"));
-    staticMeshShaderGbufferProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+    RHI::Vulkan::Shader vertexShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/static_mesh_gbuffer.vert.spv"));
+    RHI::Vulkan::Shader fragmentShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/static_mesh_gbuffer.frag.spv"));
+    staticMeshShaderGbufferProgram = std::make_unique<RHI::Vulkan::ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 
   {
-    Shader vertexShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/deferred_light.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/deferred_light.frag.spv"));
-    deferredLightProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+    RHI::Vulkan::Shader vertexShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/deferred_light.vert.spv"));
+    RHI::Vulkan::Shader fragmentShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/deferred_light.frag.spv"));
+    deferredLightProgram = std::make_unique<RHI::Vulkan::ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 
   {
-    Shader vertexShader = vkCore.CreateShader( ReadFile("../data/shaders/spirv/sky_box.vert.spv"));
-    Shader fragmentShader = vkCore.CreateShader(ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
-    skyBoxShaderProgram = std::make_unique<ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
+    RHI::Vulkan::Shader vertexShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/sky_box.vert.spv"));
+    RHI::Vulkan::Shader fragmentShader = vkCore.CreateShader(RHI::Vulkan::ReadFile("../data/shaders/spirv/sky_box.frag.spv"));
+    skyBoxShaderProgram = std::make_unique<RHI::Vulkan::ShaderProgram>(vkCore, std::move(vertexShader), std::move(fragmentShader));
   }
 }
 
@@ -59,7 +59,7 @@ void RenderSystem::Update(const double dt)
   if (camera == nullptr)
     throw std::runtime_error("Camera is not set.");
 
-  RenderGraph* rg = vkCore.BeginFrame();
+  RHI::Vulkan::RenderGraph* rg = vkCore.BeginFrame();
   RenderGBuffer(camera, rg);
   RenderLight(camera, rg);
 
@@ -67,7 +67,7 @@ void RenderSystem::Update(const double dt)
 }
 
 
-void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
+void RenderSystem::RenderGBuffer(CameraComponent* camera, RHI::Vulkan::RenderGraph* rg)
 {
   rg->AddRenderSubpass()
     .AddNewOutputColorAttachment("GBUFFER_BaseColor")
@@ -77,13 +77,13 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
     .AddNewOutputColorAttachment("GBUFFER_Roughness")
     .AddNewOutputColorAttachment("GBUFFER_Depth")
     .AddDepthStencilAttachment("depth")
-    .SetRenderCallback([&](FrameContext& context)
+    .SetRenderCallback([&](RHI::Vulkan::FrameContext& context)
     {
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
-      VertexInputDeclaration vid = StaticMeshVertex::GetVID();
+      RHI::Vulkan::VertexInputDeclaration vid = RHI::Vulkan::StaticMeshVertex::GetVID();
 
-      Pipeline* pipeline = context.GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest);
-      UniformsAccessor* uniforms = context.GetUniformsAccessor(*staticMeshShaderGbufferProgram);
+      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest);
+      RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*staticMeshShaderGbufferProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
@@ -92,7 +92,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
         if (e == nullptr)
           continue;
 
-        for (auto* meshComponent : e->GetComponents<StaticMeshComponent>())
+        for (auto* meshComponent : e->GetComponents<RHI::Vulkan::StaticMeshComponent>())
         {
           const glm::mat4 model = meshComponent->transform.GetTransformationMatrix();
           const glm::mat4 view = camera->GetView();
@@ -107,8 +107,8 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
 
           for (int i = 0; i < meshComponent->model->meshes.size(); ++i)
           {
-            const StaticMesh& mesh = meshComponent->model->meshes[i];
-            const Material& meshMaterial = meshComponent->model->materials[i];
+            const RHI::Vulkan::StaticMesh& mesh = meshComponent->model->meshes[i];
+            const RHI::Vulkan::Material& meshMaterial = meshComponent->model->materials[i];
 
             assert(meshMaterial.colorTexture != nullptr);
 
@@ -129,13 +129,13 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
 
       //render skybox
       {
-        SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<SkyBoxComponent>();
-        VertexInputDeclaration vid = SkyBoxVertex::GetVID();
+        RHI::Vulkan::SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<RHI::Vulkan::SkyBoxComponent>();
+        RHI::Vulkan::VertexInputDeclaration vid = RHI::Vulkan::SkyBoxVertex::GetVID();
 
-        Pipeline* pipeline = context.GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, EnableDepthTest);
+        RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
-        UniformsAccessor* uniforms = context.GetUniformsAccessor(*skyBoxShaderProgram);
+        RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*skyBoxShaderProgram);
 
         SkyboxPerFrameResource perFrameUbo;
         perFrameUbo.projection = camera->GetProjection();
@@ -156,7 +156,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RenderGraph* rg)
     });
 }
 
-void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
+void RenderSystem::RenderLight(CameraComponent* camera, RHI::Vulkan::RenderGraph* rg)
 {
   rg->AddRenderSubpass()
     .AddInputAttachment({"GBUFFER_BaseColor"})
@@ -166,12 +166,12 @@ void RenderSystem::RenderLight(CameraComponent* camera, RenderGraph* rg)
     .AddInputAttachment({"GBUFFER_Roughness"})
     .AddInputAttachment({"GBUFFER_Depth"})
     .AddExistOutputColorAttachment(BACKBUFFER_RESOURCE_ID)
-    .SetRenderCallback([&](FrameContext& context)
+    .SetRenderCallback([&](RHI::Vulkan::FrameContext& context)
     {
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
 
-      Pipeline* pipeline = context.GetPipeline(*deferredLightProgram, VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, DisableDepthTest);
-      UniformsAccessor* uniforms = context.GetUniformsAccessor(*deferredLightProgram);
+      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*deferredLightProgram, RHI::Vulkan::VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, RHI::Vulkan::DisableDepthTest);
+      RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*deferredLightProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 

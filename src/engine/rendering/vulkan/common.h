@@ -8,32 +8,35 @@
 
 #include <tuple>
 
-typedef std::string ResourceId;
-
-struct ImageAttachment
+namespace RHI::Vulkan
 {
-  ResourceId id;
-  vk::Format format;
-  ImageView view;
-  ImageType type;
-  vk::ImageLayout initialLayout;
-  vk::ImageLayout finalLayout;
-  vk::AttachmentLoadOp loadOp;
-  vk::AttachmentStoreOp storeOp;
-  vk::ImageUsageFlags usageFlags;
+  typedef std::string ResourceId;
 
-  inline bool operator<(const ImageAttachment& r) const
+  struct ImageAttachment
   {
-    return std::tie(id, format, type, initialLayout, finalLayout, loadOp, storeOp, usageFlags) <
-           std::tie(r.id, r.format, r.type, r.initialLayout, r.finalLayout, r.loadOp, r.storeOp, r.usageFlags);
-  }
-};
+    ResourceId id;
+    vk::Format format;
+    ImageView view;
+    ImageType type;
+    vk::ImageLayout initialLayout;
+    vk::ImageLayout finalLayout;
+    vk::AttachmentLoadOp loadOp;
+    vk::AttachmentStoreOp storeOp;
+    vk::ImageUsageFlags usageFlags;
 
-struct DepthStencilSettings
-{
-  bool depthTestEnabled = false;
-  bool depthWriteEnabled = false;
-};
+    inline bool operator<(const ImageAttachment& r) const
+    {
+      return std::tie(id, format, type, initialLayout, finalLayout, loadOp, storeOp, usageFlags) <
+        std::tie(r.id, r.format, r.type, r.initialLayout, r.finalLayout, r.loadOp, r.storeOp, r.usageFlags);
+    }
+  };
 
-constexpr DepthStencilSettings EnableDepthTest{ true, true };
-constexpr DepthStencilSettings DisableDepthTest{ false, false };
+  struct DepthStencilSettings
+  {
+    bool depthTestEnabled = false;
+    bool depthWriteEnabled = false;
+  };
+
+  constexpr DepthStencilSettings EnableDepthTest{ true, true };
+  constexpr DepthStencilSettings DisableDepthTest{ false, false };
+}

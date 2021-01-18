@@ -5,40 +5,43 @@
 
 #include <vulkan/vulkan.hpp>
 
-class VertexInputDeclaration;
-class DepthStencilSettings;
-
-class Pipeline
+namespace RHI::Vulkan
 {
-public:
-  Pipeline(vk::Device logicalDevice,
-    const ShaderProgram& program,
-    const VertexInputDeclaration& vertexInputDeclaration,
-    const std::vector<vk::DescriptorSetLayout> layouts,
-    const vk::PrimitiveTopology topology,
-    const DepthStencilSettings& depthStencilSettings,
-    const vk::Extent2D viewportExtent,
-    const vk::RenderPass renderpass,
-    const uint32_t subpass,
-    const uint32_t attachmentsCount);
+  class VertexInputDeclaration;
+  class DepthStencilSettings;
 
-  inline vk::Pipeline GetPipeline() const 
-  { 
-    return pipeline.get(); 
-  }
-
-  inline const PipelineUniforms& GetUniformsDescription() const
+  class Pipeline
   {
-    return uniformsDescriptions;
-  }
+  public:
+    Pipeline(vk::Device logicalDevice,
+      const ShaderProgram& program,
+      const VertexInputDeclaration& vertexInputDeclaration,
+      const std::vector<vk::DescriptorSetLayout> layouts,
+      const vk::PrimitiveTopology topology,
+      const DepthStencilSettings& depthStencilSettings,
+      const vk::Extent2D viewportExtent,
+      const vk::RenderPass renderpass,
+      const uint32_t subpass,
+      const uint32_t attachmentsCount);
 
-  inline vk::PipelineLayout GetLayout() const
-  {
-    return layout.get();
-  }
+    inline vk::Pipeline GetPipeline() const
+    {
+      return pipeline.get();
+    }
 
-private:
-  vk::UniquePipeline pipeline;
-  vk::UniquePipelineLayout layout;
-  PipelineUniforms uniformsDescriptions;
-};
+    inline const PipelineUniforms& GetUniformsDescription() const
+    {
+      return uniformsDescriptions;
+    }
+
+    inline vk::PipelineLayout GetLayout() const
+    {
+      return layout.get();
+    }
+
+  private:
+    vk::UniquePipeline pipeline;
+    vk::UniquePipelineLayout layout;
+    PipelineUniforms uniformsDescriptions;
+  };
+}

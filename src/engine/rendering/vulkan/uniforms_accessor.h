@@ -4,55 +4,58 @@
 #include "Shader.h"
 #include "buffer.h"
 
-class Core;
-class Image;
-class ImageView;
-
-class UniformsAccessor
+namespace RHI::Vulkan
 {
-public:
-  UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
+  class Core;
+  class Image;
+  class ImageView;
 
-  template<class T>
-  void SetUniformBuffer(const UniformName& name, const T* data)
+  class UniformsAccessor
   {
-    auto [setBinding, bindingDescription, dscSet] = AccessDescriptorSet(name, UniformType::UniformBuffer);
+  public:
+    UniformsAccessor(Core& core, vk::DescriptorPool descriptorPool, const std::vector<vk::DescriptorSetLayout>& layouts, const PipelineUniforms& uniforms);
 
-    if (sizeof(T) != bindingDescription.size)
-      throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
+    template<class T>
+    void SetUniformBuffer(const UniformName& name, const T* data)
+    {
+      auto [setBinding, bindingDescription, dscSet] = AccessDescriptorSet(name, UniformType::UniformBuffer);
 
-    HostBuffer buf = core.AllocateHostBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
-    buf.UploadMemory(data, sizeof(T), 0);
-    ownedBuffers.push_back(std::move(buf));
+      if (sizeof(T) != bindingDescription.size)
+        throw std::runtime_error("UniformsAccessor::GetUniformBuffer, uniform's size is not equal to the requested mapping structure.");
 
-    writes[setBinding] = vk::WriteDescriptorSet()
-      .setDescriptorCount(1)
-      .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-      .setDstArrayElement(0)
-      .setDstBinding(setBinding.binding)
-      .setDstSet(dscSet)
-      .setPBufferInfo(&ownedBuffers.back().GetFullBufferUpdateInfo());
-  }
+      HostBuffer buf = core.AllocateHostBuffer(bindingDescription.size, vk::BufferUsageFlagBits::eUniformBuffer);
+      buf.UploadMemory(data, sizeof(T), 0);
+      ownedBuffers.push_back(std::move(buf));
 
-  std::tuple<UniformSetPair, UniformBindingDescription, vk::DescriptorSet> AccessDescriptorSet(const UniformName& name, UniformType type);
+      writes[setBinding] = vk::WriteDescriptorSet()
+        .setDescriptorCount(1)
+        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setDstArrayElement(0)
+        .setDstBinding(setBinding.binding)
+        .setDstSet(dscSet)
+        .setPBufferInfo(&ownedBuffers.back().GetFullBufferUpdateInfo());
+    }
 
-  void SetSampler2D(const UniformName& name, const Image& img);
+    std::tuple<UniformSetPair, UniformBindingDescription, vk::DescriptorSet> AccessDescriptorSet(const UniformName& name, UniformType type);
 
-  void SetSamplerCube(const UniformName& name, const ImageView& img);
+    void SetSampler2D(const UniformName& name, const Image& img);
 
-  void SetSubpassInput(const UniformName& name, const ImageView& img);
+    void SetSamplerCube(const UniformName& name, const ImageView& img);
 
-  std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
+    void SetSubpassInput(const UniformName& name, const ImageView& img);
 
-private:
-  Core& core;
-  vk::DescriptorPool descriptorPool;
-  std::vector<vk::DescriptorSetLayout> layouts;
-  PipelineUniforms uniforms;
+    std::vector<vk::DescriptorSet> GetUpdatedDescriptorSets();
 
-  std::vector<vk::DescriptorSet> currentDescriptorSets;
-  std::vector<vk::UniqueDescriptorSet> ownedDescriptorSets;
-  std::vector<Buffer> ownedBuffers;
+  private:
+    Core& core;
+    vk::DescriptorPool descriptorPool;
+    std::vector<vk::DescriptorSetLayout> layouts;
+    PipelineUniforms uniforms;
 
-  std::map<UniformSetPair, vk::WriteDescriptorSet> writes;
-};
+    std::vector<vk::DescriptorSet> currentDescriptorSets;
+    std::vector<vk::UniqueDescriptorSet> ownedDescriptorSets;
+    std::vector<Buffer> ownedBuffers;
+
+    std::map<UniformSetPair, vk::WriteDescriptorSet> writes;
+  };
+}

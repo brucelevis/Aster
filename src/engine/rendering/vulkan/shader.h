@@ -6,68 +6,72 @@
 
 #include <string>
 
-class Core;
-
-class Shader
+namespace RHI::Vulkan
 {
-public:
-  Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode);
+  class Core;
 
-  vk::ShaderModule GetModule() const;
-
-  inline const PipelineUniforms& GetUniformsDescriptions() const
+  class Shader
   {
-    return uniforms;
-  }
+  public:
+    Shader(vk::Device logicalDevice, const std::vector<uint32_t>& byteCode);
 
-private:
-  vk::UniqueShaderModule shaderModule;
+    vk::ShaderModule GetModule() const;
 
-  PipelineUniforms uniforms;
-};
+    inline const PipelineUniforms& GetUniformsDescriptions() const
+    {
+      return uniforms;
+    }
 
-class ShaderProgram
-{
-public:
-  ShaderProgram(Core& core, Shader&& vertex, Shader&& fragment);
-  ~ShaderProgram();
+  private:
+    vk::UniqueShaderModule shaderModule;
 
-  inline const Shader& GetVertexShader() const
+    PipelineUniforms uniforms;
+  };
+
+  class ShaderProgram
   {
-    return vertex;
-  }
+  public:
+    ShaderProgram(Core& core, Shader&& vertex, Shader&& fragment);
+    ~ShaderProgram();
 
-  inline const Shader& GetFragmentShader() const
-  {
-    return fragment;
-  }
+    inline const Shader& GetVertexShader() const
+    {
+      return vertex;
+    }
 
-  inline const PipelineUniforms& GetCombinedUniformsInformation() const
-  {
-    return uniforms;
-  }
+    inline const Shader& GetFragmentShader() const
+    {
+      return fragment;
+    }
 
-  inline const std::vector<vk::DescriptorSetLayout> GetLayouts() const
-  {
-    return layouts;
-  }
+    inline const PipelineUniforms& GetCombinedUniformsInformation() const
+    {
+      return uniforms;
+    }
 
-  inline std::string GetID() const
-  {
-    return id;
-  }
+    inline const std::vector<vk::DescriptorSetLayout> GetLayouts() const
+    {
+      return layouts;
+    }
 
-private:
-  std::vector<vk::DescriptorSetLayout> CreateLayouts(Core& core, const PipelineUniforms& uniforms) const;
+    inline std::string GetID() const
+    {
+      return id;
+    }
 
-private:
-  Core& core;
+  private:
+    std::vector<vk::DescriptorSetLayout> CreateLayouts(Core& core, const PipelineUniforms& uniforms) const;
 
-  Shader vertex;
-  Shader fragment;
+  private:
+    Core& core;
 
-  PipelineUniforms uniforms;
-  std::vector<vk::DescriptorSetLayout> layouts;
+    Shader vertex;
+    Shader fragment;
 
-  std::string id;
-};
+    PipelineUniforms uniforms;
+    std::vector<vk::DescriptorSetLayout> layouts;
+
+    std::string id;
+  };
+
+}

@@ -7,18 +7,20 @@
 #include "pipeline_storage.h"
 #include "uniforms_accessor_storage.h"
 
-
-const ImageView& FrameContext::GetImageView(const ResourceId& id) const
+namespace RHI::Vulkan
 {
-  return renderGraph->GetImageView(id);
-}
+  const ImageView& FrameContext::GetImageView(const ResourceId& id) const
+  {
+    return renderGraph->GetImageView(id);
+  }
 
-Pipeline* FrameContext::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings)
-{
-  return pipelineStorage->GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, *this);
-}
+  Pipeline* FrameContext::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings)
+  {
+    return pipelineStorage->GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, *this);
+  }
 
-UniformsAccessor* FrameContext::GetUniformsAccessor(const ShaderProgram& program)
-{
-  return uniformsAccessorStorage->GetUniformsAccessor(program);
+  UniformsAccessor* FrameContext::GetUniformsAccessor(const ShaderProgram& program)
+  {
+    return uniformsAccessorStorage->GetUniformsAccessor(program);
+  }
 }

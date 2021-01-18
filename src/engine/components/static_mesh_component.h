@@ -9,29 +9,32 @@
 
 #include <vector>
 
-struct StaticMesh
+namespace RHI::Vulkan
 {
-  Buffer vertices;
-  Buffer indices;
-  Buffer tbnVectorsBuffer;
-  unsigned int indexCount = 0;
-};
+  struct StaticMesh
+  {
+    Buffer vertices;
+    Buffer indices;
+    Buffer tbnVectorsBuffer;
+    unsigned int indexCount = 0;
+  };
 
-struct Material
-{
-  Image* colorTexture = nullptr;
-  Image* metallicRoughnessTexture = nullptr;
-  Image* normalTexture = nullptr;
-};
+  struct Material
+  {
+    Image* colorTexture = nullptr;
+    Image* metallicRoughnessTexture = nullptr;
+    Image* normalTexture = nullptr;
+  };
 
-struct StaticModel
-{
-  std::vector<StaticMesh> meshes;
-  std::vector<Material> materials;
-};
+  struct StaticModel
+  {
+    std::vector<StaticMesh> meshes;
+    std::vector<Material> materials;
+  };
 
-struct StaticMeshComponent : public BaseComponent
-{
-  Transform transform;
-  StaticModel* model;
-};
+  struct StaticMeshComponent : public BaseComponent
+  {
+    Transform transform;
+    StaticModel* model;
+  };
+}

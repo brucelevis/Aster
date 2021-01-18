@@ -19,87 +19,90 @@
 #include <vulkan/vulkan.hpp>
 #undef VK_USE_PLATFORM_WIN32_KHR
 
-struct FrameResources
-{
-  ImageView swapchainImage;
-  vk::UniqueFence cmdBufferFreeToUse;
-  vk::UniqueSemaphore swapchainImageAckquired;
-  vk::UniqueSemaphore renderingFinished;
-  vk::UniqueCommandBuffer cmdBuffer;
-  std::unique_ptr<UniformsAccessorStorage> uaStorage;
-  std::unique_ptr<RenderGraph> renderGraph;
-
-};
-
 struct GLFWwindow;
 
-class Core
+namespace RHI::Vulkan
 {
-public:
+  struct FrameResources
+  {
+    ImageView swapchainImage;
+    vk::UniqueFence cmdBufferFreeToUse;
+    vk::UniqueSemaphore swapchainImageAckquired;
+    vk::UniqueSemaphore renderingFinished;
+    vk::UniqueCommandBuffer cmdBuffer;
+    std::unique_ptr<UniformsAccessorStorage> uaStorage;
+    std::unique_ptr<RenderGraph> renderGraph;
 
-  Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanceExtensionsCount, vk::Extent2D windowSize);
+  };
 
-  FramebufferStorage& GetFramebufferStorage();
+  class Core
+  {
+  public:
 
-  RenderPassStorage& GetRenderPassStorage();
+    Core(GLFWwindow* window, const char** instanceExtensions, uint32_t instanceExtensionsCount, vk::Extent2D windowSize);
 
-  PipelineStorage& GetPipelineStorage();
+    FramebufferStorage& GetFramebufferStorage();
 
-  vk::Device GetDebugDevice();
+    RenderPassStorage& GetRenderPassStorage();
 
-  vk::Format GetDebugSurfaceFormat();
+    PipelineStorage& GetPipelineStorage();
 
-  Shader CreateShader(const std::vector<uint32_t>& byteCode);
+    vk::Device GetDebugDevice();
 
-  RenderGraph* BeginFrame();
+    vk::Format GetDebugSurfaceFormat();
 
-  void EndFrame();
+    Shader CreateShader(const std::vector<uint32_t>& byteCode);
 
-  HostBuffer AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
+    RenderGraph* BeginFrame();
 
-  Buffer AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
+    void EndFrame();
 
-  Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask, vk::ImageCreateFlags createFlags, uint32_t arrayLayers, vk::ImageViewType viewType);
+    HostBuffer AllocateHostBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage);
 
-  Image Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
+    Buffer AllocateDeviceBuffer(const void* src, vk::DeviceSize size, vk::BufferUsageFlags usage);
 
-  Image Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
+    Image AllocateImage(vk::ImageType type, vk::Format format, const vk::Extent3D& extent, vk::ImageUsageFlags usage, vk::ImageAspectFlags aspectMask, vk::ImageCreateFlags createFlags, uint32_t arrayLayers, vk::ImageViewType viewType);
 
-  void TransferImageDataToDeviceMemory(const HostBuffer& buffer, const Image& deviceImage, const std::vector<vk::BufferImageCopy>& copyRegions, uint32_t nLayers , vk::ImageLayout finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal);
+    Image Allocate2DImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
 
-  Image AllocateCubeMap(vk::Format format, void* src, vk::DeviceSize size, uint32_t baseWidth, uint32_t baseHeight, std::array<vk::DeviceSize, 6> offsets);
+    Image Allocate2DImage(const void* src, vk::DeviceSize size, vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usage);
 
-  Image AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usageFlags, vk::ImageAspectFlags aspectFlags);
+    void TransferImageDataToDeviceMemory(const HostBuffer& buffer, const Image& deviceImage, const std::vector<vk::BufferImageCopy>& copyRegions, uint32_t nLayers, vk::ImageLayout finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal);
 
-  vk::PhysicalDevice GetPhysicalDevice(vk::Instance instance);
+    Image AllocateCubeMap(vk::Format format, void* src, vk::DeviceSize size, uint32_t baseWidth, uint32_t baseHeight, std::array<vk::DeviceSize, 6> offsets);
 
-  vk::Device GetLogicalDevice() const;
+    Image AllocateDepthStencilImage(vk::Format format, vk::Extent2D extent, vk::ImageUsageFlags usageFlags, vk::ImageAspectFlags aspectFlags);
 
-private:
-  std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex);
+    vk::PhysicalDevice GetPhysicalDevice(vk::Instance instance);
 
-private:
-  vk::UniqueInstance instance;
-  vk::PhysicalDevice physicalDevice;
-  vk::UniqueSurfaceKHR surface;
-  uint32_t graphicsFamilyIndex;
-  uint32_t presentFamilyIndex;
-  uint32_t transferFamilyIndex;
-  vk::UniqueDevice logicalDevice;
-  vk::Queue graphicsQueue;
-  vk::Queue presentQueue;
-  vk::Queue transferQueue;
-  vk::UniqueCommandPool cmdPool;
-  std::unique_ptr<Swapchain> swapchain;
-  vk::UniqueDescriptorPool descriptorPool;
+    vk::Device GetLogicalDevice() const;
 
-  uint32_t currentVirtualFrame;
-  std::vector<FrameResources> frameResources;
+  private:
+    std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex);
 
-  std::unique_ptr<FramebufferStorage> fbStorage;
-  std::unique_ptr<RenderPassStorage> rpStorage;
-  std::unique_ptr<PipelineStorage> ppStorage;
+  private:
+    vk::UniqueInstance instance;
+    vk::PhysicalDevice physicalDevice;
+    vk::UniqueSurfaceKHR surface;
+    uint32_t graphicsFamilyIndex;
+    uint32_t presentFamilyIndex;
+    uint32_t transferFamilyIndex;
+    vk::UniqueDevice logicalDevice;
+    vk::Queue graphicsQueue;
+    vk::Queue presentQueue;
+    vk::Queue transferQueue;
+    vk::UniqueCommandPool cmdPool;
+    std::unique_ptr<Swapchain> swapchain;
+    vk::UniqueDescriptorPool descriptorPool;
 
-  uint32_t hostVisibleMemoryIndex;
-  uint32_t deviceLocalMemoryIndex;
-};
+    uint32_t currentVirtualFrame;
+    std::vector<FrameResources> frameResources;
+
+    std::unique_ptr<FramebufferStorage> fbStorage;
+    std::unique_ptr<RenderPassStorage> rpStorage;
+    std::unique_ptr<PipelineStorage> ppStorage;
+
+    uint32_t hostVisibleMemoryIndex;
+    uint32_t deviceLocalMemoryIndex;
+  };
+}

@@ -8,46 +8,49 @@
 #include <memory>
 #include <optional>
 
-class Core;
-
-struct SubpassKey
+namespace RHI::Vulkan
 {
-  bool operator<(const SubpassKey& r) const;
+  class Core;
 
-  std::vector<vk::AttachmentReference> inputAttachmentReferences;
-  std::vector<vk::AttachmentReference> outputColorAttachmentReferences;
-  std::optional<vk::AttachmentReference> depthStencilAttachmentReference;
-};
+  struct SubpassKey
+  {
+    bool operator<(const SubpassKey& r) const;
 
-class RenderPassKey
-{
-  friend class RenderPassStorage;
-public:
-  RenderPassKey& SetSubpassesDescriptions(const std::vector<SubpassKey>& descs);
+    std::vector<vk::AttachmentReference> inputAttachmentReferences;
+    std::vector<vk::AttachmentReference> outputColorAttachmentReferences;
+    std::optional<vk::AttachmentReference> depthStencilAttachmentReference;
+  };
 
-  RenderPassKey& SetDependencies(const std::vector<vk::SubpassDependency>& deps);
+  class RenderPassKey
+  {
+    friend class RenderPassStorage;
+  public:
+    RenderPassKey& SetSubpassesDescriptions(const std::vector<SubpassKey>& descs);
 
-  RenderPassKey& SetImageAttachments(const std::vector<ImageAttachment>& a);
+    RenderPassKey& SetDependencies(const std::vector<vk::SubpassDependency>& deps);
 
-  RenderPassKey& SetBackbufferFormat(const vk::Format& f);
+    RenderPassKey& SetImageAttachments(const std::vector<ImageAttachment>& a);
 
-  bool operator<(const RenderPassKey& r) const;
+    RenderPassKey& SetBackbufferFormat(const vk::Format& f);
 
-private:
-  std::vector<SubpassKey> subpassesDescriptions;
-  std::vector<vk::SubpassDependency> dependencies;
-  std::vector<ImageAttachment> imageAttachments;
-  vk::Format backbufferFormat;
-};
+    bool operator<(const RenderPassKey& r) const;
 
-class RenderPassStorage
-{
-public:
-  RenderPassStorage(Core& core);
+  private:
+    std::vector<SubpassKey> subpassesDescriptions;
+    std::vector<vk::SubpassDependency> dependencies;
+    std::vector<ImageAttachment> imageAttachments;
+    vk::Format backbufferFormat;
+  };
 
-  vk::RenderPass GetRenderPass(const RenderPassKey& key);
+  class RenderPassStorage
+  {
+  public:
+    RenderPassStorage(Core& core);
 
-private:
-  Core& core;
-  std::map<RenderPassKey, vk::UniqueRenderPass> renderPasses;
-};
+    vk::RenderPass GetRenderPass(const RenderPassKey& key);
+
+  private:
+    Core& core;
+    std::map<RenderPassKey, vk::UniqueRenderPass> renderPasses;
+  };
+}

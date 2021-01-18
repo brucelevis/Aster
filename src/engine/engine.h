@@ -6,8 +6,12 @@
 
 #include <memory>
 
+namespace RHI::Vulkan
+{
+  class Core;
+}
+
 class AssetStorage;
-class Core;
 struct GLFWwindow;
 
 class Engine
@@ -55,7 +59,7 @@ private:
   Settings settings;
   Context ecsContext;
   GLFWwindow* wnd;
-  std::unique_ptr<Core> vkCore;
+  std::unique_ptr<RHI::Vulkan::Core> vkCore;
   std::unique_ptr<AssetStorage> assetStorage;
   std::unique_ptr<InputHandler> inputHandler;
 };
