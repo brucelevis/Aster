@@ -16,6 +16,7 @@ set(SPIRV_DEP_DIR "${DEP_DIR}/spirv_cross")
 set(CATCH2_DEP_DIR "${DEP_DIR}/Catch2")
 set(YAML_CPP_DEP_DIR "${DEP_DIR}/yaml-cpp")
 set(KTX_DIR "${DEP_DIR}/ktx")
+set(IMGUI_DEP_DIR "${DEP_DIR}/imgui")
 
 include_directories(
     "${CMAKE_SOURCE_DIR}/src"
@@ -27,9 +28,11 @@ include_directories(
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/Catch2")
 add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/ecs")
+add_subdirectory("${CMAKE_SOURCE_DIR}/dependency/imgui")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/engine")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/application/Aster")
+add_subdirectory("${CMAKE_SOURCE_DIR}/src/application/mesh_editor")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shader_parsing")

@@ -8,6 +8,12 @@ namespace vk
   {
     return std::tie(l.height, l.width) < std::tie(r.height, r.width);
   }
+
+  bool operator<(const vk::PipelineColorBlendAttachmentState& l, const vk::PipelineColorBlendAttachmentState& r)
+  {
+    return std::tie(l.alphaBlendOp, l.blendEnable, l.colorBlendOp, l.colorWriteMask, l.dstAlphaBlendFactor, l.dstColorBlendFactor, l.srcAlphaBlendFactor, l.srcColorBlendFactor) <
+           std::tie(r.alphaBlendOp, r.blendEnable, r.colorBlendOp, r.colorWriteMask, r.dstAlphaBlendFactor, r.dstColorBlendFactor, r.srcAlphaBlendFactor, r.srcColorBlendFactor);
+  }
 }
 
 namespace RHI::Vulkan
@@ -54,16 +60,16 @@ namespace RHI::Vulkan
     return *this;
   }
 
-  PipelineKey& PipelineKey::SetAttachmentsCount(const uint32_t a)
+  PipelineKey& PipelineKey::SetColorAttachmentBlendStates(const std::vector<vk::PipelineColorBlendAttachmentState>& bs)
   {
-    attachmentsCount = a;
+    colorAttachmentBlendStates = bs;
     return *this;
   }
 
   bool PipelineKey::operator<(const PipelineKey& r) const
   {
-    return std::tie(shaderProgramId, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, attachmentsCount) <
-      std::tie(r.shaderProgramId, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.attachmentsCount);
+    return std::tie(shaderProgramId, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, colorAttachmentBlendStates) <
+      std::tie(r.shaderProgramId, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.colorAttachmentBlendStates);
   }
 
   PipelineStorage::PipelineStorage(Core& core)
@@ -78,7 +84,7 @@ namespace RHI::Vulkan
     const vk::Extent2D& viewportExtent,
     vk::RenderPass renderPass,
     uint32_t subpassNumber,
-    uint32_t attachmentsCount)
+    const std::vector<vk::PipelineColorBlendAttachmentState>& outputAttachmentBlendStates)
   {
     const auto key = PipelineKey()
       .SetShaderProgramId(program.GetID())
@@ -88,14 +94,14 @@ namespace RHI::Vulkan
       .SetViewportExtent(viewportExtent)
       .SetRenderPass(renderPass)
       .SetSubpassNumber(subpassNumber)
-      .SetAttachmentsCount(attachmentsCount);
+      .SetColorAttachmentBlendStates(outputAttachmentBlendStates);
 
     if (storage.find(key) != storage.end())
       return storage[key].get();
 
     const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
-    std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber, attachmentsCount);
+    std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber, outputAttachmentBlendStates);
     Pipeline* pipeline = pp.get();
     storage[key] = std::move(pp);
 
@@ -104,6 +110,6 @@ namespace RHI::Vulkan
 
   Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext)
   {
-    return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, frameContext.outputColorAttachmentsNumber);
+    return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, frameContext.outputAttachmentBlendStates);
   }
 }

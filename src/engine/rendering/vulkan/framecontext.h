@@ -30,7 +30,7 @@ namespace RHI::Vulkan
     vk::Framebuffer framebuffer;
     vk::CommandBuffer commandBuffer;
     uint32_t subpassNumber;
-    uint16_t outputColorAttachmentsNumber;
+    std::vector<vk::PipelineColorBlendAttachmentState> outputAttachmentBlendStates;
 
   private:
     RenderGraph* renderGraph;

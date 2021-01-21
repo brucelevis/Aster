@@ -13,7 +13,7 @@ namespace RHI::Vulkan
     const vk::Extent2D viewportExtent,
     const vk::RenderPass renderpass,
     const uint32_t subpass,
-    const uint32_t attachmentsCount)
+    const std::vector<vk::PipelineColorBlendAttachmentState>& colorAttachmentBlendStates)
   {
     const auto vertexStageCreateInfo = vk::PipelineShaderStageCreateInfo()
       .setStage(vk::ShaderStageFlagBits::eVertex)
@@ -75,20 +75,10 @@ namespace RHI::Vulkan
       .setSampleShadingEnable(false)
       .setRasterizationSamples(vk::SampleCountFlagBits::e1);
 
-    std::vector<vk::PipelineColorBlendAttachmentState> colorBlendAttachmentStates;
-    for (int i = 0; i < attachmentsCount; ++i)
-    {
-      colorBlendAttachmentStates.push_back(
-        vk::PipelineColorBlendAttachmentState()
-        .setColorWriteMask(vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB)
-        .setBlendEnable(false)
-      );
-    }
-
     const auto colorBlendStateCreateInfo = vk::PipelineColorBlendStateCreateInfo()
       .setLogicOpEnable(false)
-      .setAttachmentCount(colorBlendAttachmentStates.size())
-      .setPAttachments(colorBlendAttachmentStates.data());
+      .setAttachmentCount(colorAttachmentBlendStates.size())
+      .setPAttachments(colorAttachmentBlendStates.data());
 
     const auto depthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo()
       .setDepthTestEnable(depthStencilSettings.depthTestEnabled)

@@ -22,7 +22,7 @@ namespace RHI::Vulkan
       const vk::Extent2D viewportExtent,
       const vk::RenderPass renderpass,
       const uint32_t subpass,
-      const uint32_t attachmentsCount);
+      const std::vector<vk::PipelineColorBlendAttachmentState>& colorAttachmentBlendStates);
 
     inline vk::Pipeline GetPipeline() const
     {

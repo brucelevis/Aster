@@ -629,4 +629,29 @@ namespace RHI::Vulkan
   {
     return logicalDevice.get();
   }
+
+  vk::ImageMemoryBarrier Core::GetImageMemoryBarrier(const ImageView& view, ImageType imgType)
+  {
+    vk::ImageLayout oldLayout, newLayout;
+
+    switch (imgType)
+    {
+    case ImageType::Present:
+      oldLayout = vk::ImageLayout::ePresentSrcKHR;
+      newLayout = vk::ImageLayout::ePresentSrcKHR;
+
+    default:
+      throw std::runtime_error("GetImageMemoryBarriersForSubpass: unsupported image type");
+    }
+
+    return vk::ImageMemoryBarrier{}
+      .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+      .setOldLayout(oldLayout)
+      .setNewLayout(newLayout)
+      .setSrcQueueFamilyIndex(graphicsFamilyIndex)
+      .setDstQueueFamilyIndex(graphicsFamilyIndex)
+      .setImage(view.GetImage())
+      .setSubresourceRange(view.GetSubresourceRange());
+  }
 }

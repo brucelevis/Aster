@@ -77,6 +77,13 @@ namespace RHI::Vulkan
 
     vk::Device GetLogicalDevice() const;
 
+    vk::ImageMemoryBarrier GetImageMemoryBarrier(const ImageView& view, ImageType imgType);
+
+    inline uint32_t GetSwapchainImagesCount() const
+    {
+      return swapchain->GetImagesCount();
+    }
+
   private:
     std::tuple<vk::UniqueBuffer, vk::UniqueDeviceMemory, vk::DeviceSize> AllocateBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex);
 

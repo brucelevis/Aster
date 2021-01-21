@@ -12,9 +12,11 @@ namespace RHI::Vulkan
   public:
     ImageView() = default;
 
-    ImageView(vk::ImageView view, vk::DescriptorImageInfo descriptorImageInfo)
-      : view(view)
+    ImageView(vk::Image image, vk::ImageView view, const vk::DescriptorImageInfo& descriptorImageInfo, const vk::ImageSubresourceRange& subresourceRange)
+      : image(image)
+      , view(view)
       , descriptorImageInfo(descriptorImageInfo)
+      , subresourceRange(subresourceRange)
     {
 
     }
@@ -24,9 +26,20 @@ namespace RHI::Vulkan
       return view;
     }
 
+    // HAAAAAAAAAAAACKS
+    inline vk::Image GetImage() const
+    {
+      return image;
+    }
+
     inline const vk::DescriptorImageInfo& GetDescriptorImageInfo() const
     {
       return descriptorImageInfo;
+    }
+
+    inline const vk::ImageSubresourceRange& GetSubresourceRange() const
+    {
+      return subresourceRange;
     }
 
     inline bool operator<(const ImageView& r) const
@@ -35,18 +48,22 @@ namespace RHI::Vulkan
     }
 
   private:
+    vk::Image image;
     vk::ImageView view;
     vk::DescriptorImageInfo descriptorImageInfo;
+    vk::ImageSubresourceRange subresourceRange;
   };
 
   class Image
   {
   public:
+    Image() = default;
+
     Image(const vk::Device& logicalDevice, const vk::Image& img, vk::Format format, vk::Extent2D extent)
     {
       this->swapchainImage = img;
 
-      const auto subresourceRange = vk::ImageSubresourceRange()
+      subresourceRange = vk::ImageSubresourceRange()
         .setAspectMask(vk::ImageAspectFlagBits::eColor)
         .setBaseMipLevel(0)
         .setLevelCount(1)
@@ -76,7 +93,7 @@ namespace RHI::Vulkan
 
     inline ImageView GetView() const
     {
-      return ImageView(view.get(), descriptorImageInfo);
+      return ImageView(image.get(), view.get(), descriptorImageInfo, subresourceRange);
     }
 
     inline vk::Image GetImage() const
@@ -106,6 +123,7 @@ namespace RHI::Vulkan
     vk::UniqueDeviceMemory memory;
     vk::UniqueSampler sampler;
     vk::DescriptorImageInfo descriptorImageInfo;
+    vk::ImageSubresourceRange subresourceRange;
   };
 
 }

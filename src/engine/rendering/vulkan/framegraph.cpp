@@ -21,8 +21,10 @@ namespace RHI::Vulkan
     return *this;
   }
 
-  RenderSubpass& RenderSubpass::AddInputSampler()
+  RenderSubpass& RenderSubpass::AddInputSampler(const ResourceId& id)
   {
+    inputSamplers.push_back(id);
+
     return *this;
   }
 
@@ -31,9 +33,11 @@ namespace RHI::Vulkan
     return *this;
   }
 
-  RenderSubpass& RenderSubpass::AddNewOutputColorAttachment(const ResourceId& id, vk::Format format)
+  RenderSubpass& RenderSubpass::AddNewOutputColorAttachment(const ResourceId& id, vk::Format format, const vk::PipelineColorBlendAttachmentState& blendState)
   {
     outputColorAttachments.push_back(id);
+
+    outputAttachmentBlendStates.push_back(blendState);
 
     ImageAttachment createInfo;
     createInfo.id = id;
@@ -50,9 +54,11 @@ namespace RHI::Vulkan
     return *this;
   }
 
-  RenderSubpass& RenderSubpass::AddExistOutputColorAttachment(const ResourceId& id)
+  RenderSubpass& RenderSubpass::AddExistOutputColorAttachment(const ResourceId& id, const vk::PipelineColorBlendAttachmentState& blendState)
   {
     outputColorAttachments.push_back(id);
+
+    outputAttachmentBlendStates.push_back(blendState);
 
     return *this;
   }
@@ -242,15 +248,45 @@ namespace RHI::Vulkan
       const RenderSubpass& subpass = subpasses[i];
 
       context.subpassNumber = subpass.id;
-      context.outputColorAttachmentsNumber = subpass.outputColorAttachments.size();
+      context.outputAttachmentBlendStates = subpass.outputAttachmentBlendStates;
       subpass.renderCallback(context);
 
       if (i != (subpasses.size() - 1))
+      {
         cmdBuffer.nextSubpass(vk::SubpassContents::eInline);
+
+        std::vector<vk::ImageMemoryBarrier> imageMemoryBarriers = GetImageMemoryBarriersForSubpass(subpass);
+        if (imageMemoryBarriers.size() != 0)
+        {
+          cmdBuffer.pipelineBarrier(
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::PipelineStageFlagBits::eFragmentShader,
+            vk::DependencyFlagBits{},
+            0, nullptr,
+            0, nullptr,
+            imageMemoryBarriers.size(), imageMemoryBarriers.data()
+          );
+        }
+      }
     }
 
     cmdBuffer.endRenderPass();
     cmdBuffer.end();
+  }
+
+  std::vector<vk::ImageMemoryBarrier> RenderGraph::GetImageMemoryBarriersForSubpass(const RenderSubpass& subpass) const
+  {
+    std::vector<vk::ImageMemoryBarrier> barriers;
+
+    for (const ResourceId& resourceId : subpass.inputSamplers)
+    {
+      const AttachmentId attId = resourceIdToAttachmentIdMap.at(resourceId);
+      const ImageAttachment& attachment = imageAttachments[attId];
+
+      barriers.push_back(core.GetImageMemoryBarrier(attachment.view, attachment.type));
+    }
+
+    return barriers;
   }
 
   vk::RenderPass RenderGraph::CreateRenderpass()

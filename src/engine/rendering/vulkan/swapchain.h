@@ -63,12 +63,12 @@ namespace RHI::Vulkan
 
       this->extent = FindSwapchainExtent(surfaceDetails.capabilities, wndSize);
 
-      const uint32_t imageCount = GetImagesCount(surfaceDetails.capabilities, imagesCount);
+      this->imgsCount = GetImagesCount(surfaceDetails.capabilities, imagesCount);
 
       {
         auto swapchainCreateInfo = vk::SwapchainCreateInfoKHR()
           .setSurface(surface)
-          .setMinImageCount(imageCount)
+          .setMinImageCount(imagesCount)
           .setImageFormat(surfaceFormat.format)
           .setImageColorSpace(surfaceFormat.colorSpace)
           .setImageExtent(extent)
@@ -141,6 +141,11 @@ namespace RHI::Vulkan
       return extent;
     }
 
+    inline uint32_t GetImagesCount() const
+    {
+      return imgsCount;
+    }
+
   private:
     vk::SurfaceFormatKHR FindSwapchainSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& availableFormats) const
     {
@@ -208,6 +213,7 @@ namespace RHI::Vulkan
     vk::SurfaceFormatKHR surfaceFormat;
     vk::PresentModeKHR presentMode;
     vk::Extent2D extent;
+    uint32_t imgsCount;
     vk::UniqueSwapchainKHR swapchain;
     std::vector<Image> swapchainImages;
     uint32_t acquiredImageIndex;

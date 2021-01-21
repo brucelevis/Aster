@@ -24,6 +24,8 @@ namespace RHI::Vulkan
 
   typedef unsigned int SubpassId;
   typedef unsigned int AttachmentId;
+  
+  constexpr vk::ColorComponentFlags ColorWriteAll = vk::ColorComponentFlagBits::eA | vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB;
 
   #define BACKBUFFER_RESOURCE_ID RHI::Vulkan::ResourceId("__backbuffer_resource")
 
@@ -63,13 +65,19 @@ namespace RHI::Vulkan
 
     RenderSubpass& AddInputAttachment(const SubpassInput& desc);
 
-    RenderSubpass& AddInputSampler();
+    RenderSubpass& AddInputSampler(const ResourceId& id);
 
     RenderSubpass& AddInputBuffer();
 
-    RenderSubpass& AddNewOutputColorAttachment(const ResourceId& id, vk::Format format = vk::Format::eUndefined);
+    RenderSubpass& AddNewOutputColorAttachment(const ResourceId& id, vk::Format format = vk::Format::eUndefined, 
+                                               const vk::PipelineColorBlendAttachmentState& blendState = vk::PipelineColorBlendAttachmentState{}
+                                                  .setColorWriteMask(ColorWriteAll)
+                                              );
 
-    RenderSubpass& AddExistOutputColorAttachment(const ResourceId& id);
+    RenderSubpass& AddExistOutputColorAttachment(const ResourceId& id,
+                                                 const vk::PipelineColorBlendAttachmentState& blendState = vk::PipelineColorBlendAttachmentState{}
+                                                   .setColorWriteMask(ColorWriteAll)
+                                                );
 
     RenderSubpass& AddDepthOnlyAttachment(const ResourceId& id);
 
@@ -84,8 +92,11 @@ namespace RHI::Vulkan
   private:
     const unsigned int id;
     RenderPassExecutionFunction renderCallback;
+    
+    std::vector<ResourceId> inputSamplers;
     std::vector<SubpassInput> inputAttachments;
     std::vector<ResourceId> outputColorAttachments;
+    std::vector<vk::PipelineColorBlendAttachmentState> outputAttachmentBlendStates;
 
     std::vector<ImageAttachment> imageAttachmentCreateInfos;
     std::optional<ImageAttachment> depthStencilAttachment;
@@ -129,6 +140,8 @@ namespace RHI::Vulkan
     void Reset();
 
     void Execute();
+
+    std::vector<vk::ImageMemoryBarrier> GetImageMemoryBarriersForSubpass(const RenderSubpass& subpass) const;
 
     const ImageView& GetImageView(const ResourceId& id) const;
   private:
