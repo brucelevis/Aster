@@ -8,18 +8,42 @@ namespace App
   {
   public:
     Camera() = default;
-    Camera(const glm::vec3 position, const glm::vec2& wndSize);
+    Camera(float r, float xAngle, float yAngle, const glm::vec2& wndSize);
 
     glm::mat4 GetView() const;
     glm::mat4 GetProjection() const;
 
-    inline void SetPosition(const glm::vec3& position)
+    inline void SetRadius(float r)
     {
-      m_Position = position;
+      m_Radius = r;
+    }
+
+    inline void SetXAngle(float a)
+    {
+      m_xAngle = a;
+    }
+
+    inline void SetYAngle(float a)
+    {
+      m_yAngle = a;
+    }
+
+    glm::vec3 GetWorldPosition() const;
+
+    void Rotate(double dx, double dy);
+
+    inline void AddRadius(double dr)
+    {
+      m_Radius += dr;
+      if (m_Radius < 0.3f)
+        m_Radius = 0.3f;
     }
 
   private:
-    glm::vec3 m_Position;
+    glm::vec3 m_Center;
+    float m_Radius;
+    float m_yAngle;
+    float m_xAngle;
     glm::vec2 m_WndSize;
   };
 }

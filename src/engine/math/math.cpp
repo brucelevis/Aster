@@ -1,5 +1,8 @@
 #include "math.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 namespace Math
 {
   glm::mat4 Perspective(float fov, float aspect, float zNear, float zFar)
@@ -35,5 +38,10 @@ namespace Math
     };
 
     return M;
+  }
+
+  float Radians(float degree)
+  {
+    return degree * M_PI / 180.0f;
   }
 }

@@ -22,10 +22,26 @@ namespace App
 {
   class Application
   {
+    enum class Mode
+    {
+      Layout
+    };
+
+    enum class Action
+    {
+      None,
+      RotateScene
+    };
+
   public:
     Application();
 
     void Start();
+
+    void ProcessKeyInput(int scancode, int action, int mods);
+    void ProcessMouseInput(double xpos, double ypos);
+    void ProcessMouseButtonInput(int button, int action, int mods);
+    void ProcessScrollInput(double xoffset, double yoffset);
 
   private:
     GLFWwindow* m_Wnd;
@@ -34,5 +50,12 @@ namespace App
 
     Scene m_Scene;
     Camera m_Camera;
+
+    Mode m_CurrentMode;
+    Action m_CurrentAction;
+
+    struct {
+      double xPos = 0.0f, yPos = 0.0f;
+    } m_LastMouseInput;
   };
 }
