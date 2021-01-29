@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-namespace App
+namespace Editor
 {
   class Camera
   {

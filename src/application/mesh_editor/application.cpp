@@ -11,30 +11,30 @@ namespace
 {
   void GLFW_KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
   {
-    auto* handler = reinterpret_cast<App::Application*>(glfwGetWindowUserPointer(window));
+    auto* handler = reinterpret_cast<Editor::Application*>(glfwGetWindowUserPointer(window));
     handler->ProcessKeyInput(scancode, action, mods);
   }
 
   void GLFW_CursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
   {
-    auto* handler = reinterpret_cast<App::Application*>(glfwGetWindowUserPointer(window));
+    auto* handler = reinterpret_cast<Editor::Application*>(glfwGetWindowUserPointer(window));
     handler->ProcessMouseInput(xpos, ypos);
   }
 
   void GLFW_MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
   {
-    auto* handler = reinterpret_cast<App::Application*>(glfwGetWindowUserPointer(window));
+    auto* handler = reinterpret_cast<Editor::Application*>(glfwGetWindowUserPointer(window));
     handler->ProcessMouseButtonInput(button, action, mods);
   }
 
   void GLFW_ScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
   {
-    auto* handler = reinterpret_cast<App::Application*>(glfwGetWindowUserPointer(window));
+    auto* handler = reinterpret_cast<Editor::Application*>(glfwGetWindowUserPointer(window));
     handler->ProcessScrollInput(xoffset, yoffset);
   }
 }
 
-namespace App
+namespace Editor
 {
   Application::Application()
   {
@@ -69,6 +69,8 @@ namespace App
 
   void Application::Start()
   {
+    CreateDumbCubeObject();
+
     while (!glfwWindowShouldClose(m_Wnd))
     {
       glfwPollEvents();
@@ -117,5 +119,28 @@ namespace App
   void Application::ProcessScrollInput(double xoffset, double yoffset)
   {
     m_Camera.AddRadius(-yoffset * 0.3f);
+  }
+
+  void Application::CreateDumbCubeObject()
+  {
+    Scene::Object& cubeObj = m_Scene.AddNewObject();
+
+    const std::vector<glm::vec3> vertices{
+      glm::vec3{-1,1,-1},
+      glm::vec3{-1,-1,-1},
+      glm::vec3{1,-1,-1},
+      glm::vec3{1,1,-1},
+    };
+
+    const std::vector<std::vector<uint32_t>> polygons{
+      {0,1,2},
+      {2,3,0}
+    };
+
+    HalfedgeMesh& mesh = cubeObj.GetMesh();
+    std::string err = mesh.ConstructFromPolygons(polygons, vertices);
+
+    if (err != "")
+      std::printf("Failed to construct an initial cube: %s\n", err.c_str());
   }
 }

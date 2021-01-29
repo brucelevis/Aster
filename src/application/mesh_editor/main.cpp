@@ -2,6 +2,6 @@
 
 int main()
 {
-  App::Application app;
+  Editor::Application app;
   app.Start();
 }

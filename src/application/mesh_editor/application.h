@@ -18,7 +18,7 @@ namespace Rendering
 
 struct GLFWwindow;
 
-namespace App
+namespace Editor
 {
   class Application
   {
@@ -42,6 +42,9 @@ namespace App
     void ProcessMouseInput(double xpos, double ypos);
     void ProcessMouseButtonInput(int button, int action, int mods);
     void ProcessScrollInput(double xoffset, double yoffset);
+
+  private:
+    void CreateDumbCubeObject();
 
   private:
     GLFWwindow* m_Wnd;

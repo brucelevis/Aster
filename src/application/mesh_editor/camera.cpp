@@ -6,7 +6,7 @@
 
 #include <algorithm>
 
-namespace App
+namespace Editor
 {
   Camera::Camera(float r, float xAngle, float yAngle, const glm::vec2& wndSize)
     : m_Center({ 0.0f, 0.0f, 0.0f })
