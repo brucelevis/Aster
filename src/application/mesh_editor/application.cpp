@@ -130,11 +130,25 @@ namespace Editor
       glm::vec3{-1,-1,-1},
       glm::vec3{1,-1,-1},
       glm::vec3{1,1,-1},
+      glm::vec3{1,1,1},
+      glm::vec3{1,-1,1},
+      glm::vec3{-1,-1,1},
+      glm::vec3{-1,1,1}
     };
 
     const std::vector<std::vector<uint32_t>> polygons{
       {0,1,2},
-      {2,3,0}
+      {2,3,0},
+      {3,2,5},
+      {5,4,3},
+      {4,5,6},
+      {6,7,4},
+      {7,6,1},
+      {1,0,7},
+      {1,6,5},
+      {5,2,1},
+      {0,3,4},
+      {4,7,0}
     };
 
     HalfedgeMesh& mesh = cubeObj.GetMesh();
