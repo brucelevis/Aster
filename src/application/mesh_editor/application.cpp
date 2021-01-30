@@ -60,7 +60,7 @@ namespace Editor
 
     m_SceneRenderer = std::make_unique<Rendering::SceneRenderer>(m_VkCore.get());
 
-    m_Camera = Camera{ 5.0f, 0.0f, 120.0f, {wndWidth, wndHeight} };
+    m_Camera = Camera{ 5.0f, -90.0f, 120.0f, {wndWidth, wndHeight} };
 
     m_CurrentMode = Mode::Layout;
     
