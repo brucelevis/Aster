@@ -6,6 +6,47 @@
 
 namespace Editor
 {
+  glm::vec3 HalfedgeMesh::Face::GetNormal() const
+  {
+    const auto ab = m_SomeHalfedge->GetDirection();
+    const auto bc = m_SomeHalfedge->GetNext()->GetDirection();
+
+    return glm::normalize(glm::cross(bc, ab));
+  }
+
+  std::vector<HalfedgeMesh::FaceRef> HalfedgeMesh::Vertex::GetFacesAround() const
+  {
+    const auto hfBegin = m_OutHalfedge;
+
+    std::vector<FaceRef> faces;
+
+    auto hf = hfBegin;
+    while (hf->GetNext()->GetTwin() != hfBegin)
+    {
+      faces.push_back(hf->GetFace());
+      hf = hf->GetNext()->GetTwin();
+    }
+
+    return faces;
+  }
+
+  glm::vec3 HalfedgeMesh::Vertex::GetAverageNormal() const
+  {
+    const std::vector<FaceRef> facesAround = GetFacesAround();
+
+    glm::vec3 n{ 0,0,0 };
+    for (const auto& f : facesAround)
+    {
+      if (f->IsBorder() == false)
+        n += f->GetNormal();
+    }
+
+    if (n == glm::vec3{ 0,0,0 })
+      std::printf("warning: there is no true face around vertex with id(%lld)\n", m_Id);
+
+    return glm::normalize(n);
+  }
+
   bool operator<(const HalfedgeMesh::VertexRef& l, const HalfedgeMesh::VertexRef& r)
   {
     return l->GetId() < r->GetId();
@@ -35,6 +76,11 @@ namespace Editor
   HalfedgeMesh::Halfedge::Halfedge(uint64_t id)
     : m_Id(id)
   {
+  }
+
+  glm::vec3 HalfedgeMesh::Halfedge::GetDirection() const
+  {
+    return glm::normalize(m_Next->GetParentVertex()->GetCenter() - m_ParentVertex->GetCenter());
   }
 
   std::string HalfedgeMesh::ConstructFromPolygons(const std::vector<std::vector<uint32_t>> polygons, const std::vector<glm::vec3>& vertices)
@@ -260,9 +306,14 @@ namespace Editor
         else
         {
           const size_t id = m_StaticMeshVertices.size();
+          
+          const glm::vec3 position = hf->m_ParentVertex->m_Position;
+          const glm::vec3 normal = hf->m_ParentVertex->GetAverageNormal();
+
           m_StaticMeshVertices.push_back(
             StaticMeshVertex{
-              hf->m_ParentVertex->m_Position
+              position,
+              normal
             }
           );
 

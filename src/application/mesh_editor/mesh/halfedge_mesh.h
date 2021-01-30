@@ -13,6 +13,7 @@ namespace Editor
   struct StaticMeshVertex
   {
     glm::vec3 position;
+    glm::vec3 normal;
   };
 
   class HalfedgeMesh
@@ -64,6 +65,10 @@ namespace Editor
         return m_Id;
       }
 
+      std::vector<FaceRef> GetFacesAround() const;
+
+      glm::vec3 GetAverageNormal() const;
+
     private:
       Vertex(uint64_t id);
 
@@ -110,6 +115,8 @@ namespace Editor
       friend HalfedgeMesh;
     public:
       Face(uint64_t id);
+
+      glm::vec3 GetNormal() const;
 
       inline HalfedgeRef GetSomeHalfedge()
       {
@@ -219,6 +226,8 @@ namespace Editor
       {
         return m_Id;
       }
+
+      glm::vec3 GetDirection() const;
 
     private:
       uint64_t m_Id = 0;

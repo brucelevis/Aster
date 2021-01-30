@@ -16,6 +16,17 @@ namespace
 
     return vid;
   }
+
+  RHI::Vulkan::VertexInputDeclaration GetStaticMeshVID()
+  {
+    RHI::Vulkan::VertexInputDeclaration vid;
+
+    vid.AddBindingDescription(0, sizeof(Editor::StaticMeshVertex));
+    vid.AddAttributeDescription(vk::Format::eR32G32B32Sfloat, 0, 0, offsetof(Editor::StaticMeshVertex, position));
+    vid.AddAttributeDescription(vk::Format::eR32G32B32Sfloat, 0, 1, offsetof(Editor::StaticMeshVertex, normal));
+
+    return vid;
+  }
 }
 
 namespace Rendering
@@ -85,17 +96,19 @@ namespace Rendering
   {
     std::vector<Editor::Scene::Object>& objects = scene.GetObjects();
 
-    //RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_StaticMeshProgram, GetSceneLinesVID(), vk::PrimitiveTopology::eLineList, RHI::Vulkan::EnableDepthTest);
-    RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_StaticMeshProgram, GetSceneLinesVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest);
+    //RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_StaticMeshProgram, GetStaticMeshVID(), vk::PrimitiveTopology::eLineList, RHI::Vulkan::EnableDepthTest);
+    RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_StaticMeshProgram, GetStaticMeshVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest);
     ctx.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
     struct
     {
       glm::mat4 Projection;
       glm::mat4 View;
+      glm::vec3 CameraWorldPosition;
     } cameraResource{
         camera.GetProjection(),
-        camera.GetView()
+        camera.GetView(),
+        camera.GetWorldPosition()
     };
 
     RHI::Vulkan::UniformsAccessor* uniforms = ctx.GetUniformsAccessor(*m_StaticMeshProgram);
