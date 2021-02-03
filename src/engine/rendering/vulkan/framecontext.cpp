@@ -14,9 +14,9 @@ namespace RHI::Vulkan
     return renderGraph->GetImageView(id);
   }
 
-  Pipeline* FrameContext::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings)
+  Pipeline* FrameContext::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const RasterizationMode& rasterMode)
   {
-    return pipelineStorage->GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, *this);
+    return pipelineStorage->GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, rasterMode, *this);
   }
 
   UniformsAccessor* FrameContext::GetUniformsAccessor(const ShaderProgram& program)

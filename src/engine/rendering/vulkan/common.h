@@ -35,8 +35,35 @@ namespace RHI::Vulkan
   {
     bool depthTestEnabled = false;
     bool depthWriteEnabled = false;
+
+    inline bool operator<(const DepthStencilSettings& r) const
+    {
+      return std::tie(depthTestEnabled, depthWriteEnabled) <
+             std::tie(r.depthTestEnabled, r.depthWriteEnabled);
+    }
   };
 
   constexpr DepthStencilSettings EnableDepthTest{ true, true };
   constexpr DepthStencilSettings DisableDepthTest{ false, false };
+
+  struct RasterizationMode
+  {
+    bool depthClampEnable = false;
+    bool rasterizerDiscardEnable = false;
+    vk::PolygonMode polygonMode = vk::PolygonMode::eFill;
+    vk::CullModeFlagBits cullMode = vk::CullModeFlagBits::eBack;
+    vk::FrontFace frontFace = vk::FrontFace::eClockwise;
+    bool depthBiasEnable = false;
+    float lineWidth = 1.0f;
+
+    inline bool operator<(const RasterizationMode& r) const
+    {
+      return std::tie(depthClampEnable, rasterizerDiscardEnable, polygonMode, cullMode, frontFace, depthBiasEnable, lineWidth) <
+             std::tie(r.depthClampEnable, r.rasterizerDiscardEnable, r.polygonMode, r.cullMode, r.frontFace, r.depthBiasEnable, r.lineWidth);
+    }
+  };
+
+  constexpr RasterizationMode FillMode{ false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, false, 1.0f };
+  constexpr RasterizationMode WireframeNoCullMode{ false, false, vk::PolygonMode::eLine, vk::CullModeFlagBits::eNone, vk::FrontFace::eClockwise, false, 1.0f };
+  constexpr RasterizationMode WireframeMode{ false, false, vk::PolygonMode::eLine, vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, false, 1.0f };
 }

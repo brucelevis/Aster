@@ -51,6 +51,7 @@ SphereConstructDemo::SphereConstructDemo(GLFWwindow* wnd, RHI::Vulkan::Core* vkC
   , m_RotateScene(false)
   , m_SphereRadius(1.0f)
   , m_Segments(0)
+  , m_CullNone(false)
 {
   glfwSetWindowUserPointer(wnd, this);
   glfwSetKeyCallback(wnd, GLFW_KeyCallback);
@@ -119,7 +120,8 @@ void SphereConstructDemo::Dt(float dt)
         if (m_Mesh.indexCount == 0)
           return;
 
-        RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_LineShader, GetLinesVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest);
+        const RHI::Vulkan::RasterizationMode rasterMode = m_CullNone ? RHI::Vulkan::WireframeNoCullMode : RHI::Vulkan::WireframeMode;
+        RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*m_LineShader, GetLinesVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest, rasterMode);
         ctx.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         struct
@@ -151,6 +153,7 @@ void SphereConstructDemo::Dt(float dt)
     ImGui::Begin("Settings");
     ImGui::SliderInt("segments", &m_Segments, 0, 7, "%d");
     ImGui::SliderFloat("sphere's radius", &m_SphereRadius, 1.0f, 10.0f, "%.3f");
+    ImGui::Checkbox("cull none", &m_CullNone);
     ImGui::End();
   });
 

@@ -82,7 +82,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RHI::Vulkan::RenderGra
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
       RHI::Vulkan::VertexInputDeclaration vid = RHI::Vulkan::StaticMeshVertex::GetVID();
 
-      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest);
+      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*staticMeshShaderGbufferProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest, RHI::Vulkan::FillMode);
       RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*staticMeshShaderGbufferProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
@@ -132,7 +132,7 @@ void RenderSystem::RenderGBuffer(CameraComponent* camera, RHI::Vulkan::RenderGra
         RHI::Vulkan::SkyBoxComponent* skybox = skyboxGroup->GetFirstNotNullEntity()->GetFirstComponent<RHI::Vulkan::SkyBoxComponent>();
         RHI::Vulkan::VertexInputDeclaration vid = RHI::Vulkan::SkyBoxVertex::GetVID();
 
-        RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest);
+        RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*skyBoxShaderProgram, vid, vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::EnableDepthTest, RHI::Vulkan::FillMode);
         commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*skyBoxShaderProgram);
@@ -170,7 +170,7 @@ void RenderSystem::RenderLight(CameraComponent* camera, RHI::Vulkan::RenderGraph
     {
       vk::CommandBuffer& commandBuffer = context.commandBuffer;
 
-      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*deferredLightProgram, RHI::Vulkan::VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, RHI::Vulkan::DisableDepthTest);
+      RHI::Vulkan::Pipeline* pipeline = context.GetPipeline(*deferredLightProgram, RHI::Vulkan::VertexInputDeclaration{}, vk::PrimitiveTopology::eTriangleStrip, RHI::Vulkan::DisableDepthTest, RHI::Vulkan::FillMode);
       RHI::Vulkan::UniformsAccessor* uniforms = context.GetUniformsAccessor(*deferredLightProgram);
 
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());

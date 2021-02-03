@@ -42,6 +42,12 @@ namespace RHI::Vulkan
     return *this;
   }
 
+  PipelineKey& PipelineKey::SetRasterMode(const RasterizationMode& rm)
+  {
+    rasterMode = rm;
+    return *this;
+  }
+
   PipelineKey& PipelineKey::SetViewportExtent(const vk::Extent2D e)
   {
     viewportExtent = e;
@@ -68,8 +74,8 @@ namespace RHI::Vulkan
 
   bool PipelineKey::operator<(const PipelineKey& r) const
   {
-    return std::tie(shaderProgramId, vertexInputDeclaration, topology, viewportExtent, renderpass, subpass, colorAttachmentBlendStates) <
-      std::tie(r.shaderProgramId, r.vertexInputDeclaration, r.topology, r.viewportExtent, r.renderpass, r.subpass, r.colorAttachmentBlendStates);
+    return std::tie(shaderProgramId, vertexInputDeclaration, topology, depthStencilSettings, rasterMode, viewportExtent, renderpass, subpass, colorAttachmentBlendStates) <
+      std::tie(r.shaderProgramId, r.vertexInputDeclaration, r.topology, r.depthStencilSettings, r.rasterMode, r.viewportExtent, r.renderpass, r.subpass, r.colorAttachmentBlendStates);
   }
 
   PipelineStorage::PipelineStorage(Core& core)
@@ -81,6 +87,7 @@ namespace RHI::Vulkan
     const VertexInputDeclaration& vertexInputDeclaration,
     vk::PrimitiveTopology topology,
     const DepthStencilSettings& depthStencilSettings,
+    const RasterizationMode& rasterMode,
     const vk::Extent2D& viewportExtent,
     vk::RenderPass renderPass,
     uint32_t subpassNumber,
@@ -91,6 +98,7 @@ namespace RHI::Vulkan
       .SetVertexInputDeclaration(vertexInputDeclaration)
       .SetTopology(topology)
       .SetDepthStencilSettings(depthStencilSettings)
+      .SetRasterMode(rasterMode)
       .SetViewportExtent(viewportExtent)
       .SetRenderPass(renderPass)
       .SetSubpassNumber(subpassNumber)
@@ -101,15 +109,28 @@ namespace RHI::Vulkan
 
     const std::vector<vk::DescriptorSetLayout>& layouts = program.GetLayouts();
 
-    std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, viewportExtent, renderPass, subpassNumber, outputAttachmentBlendStates);
+    std::unique_ptr<Pipeline> pp = std::make_unique<Pipeline>(core.GetLogicalDevice(), program, vertexInputDeclaration, layouts, topology, depthStencilSettings, rasterMode, viewportExtent, renderPass, subpassNumber, outputAttachmentBlendStates);
     Pipeline* pipeline = pp.get();
     storage[key] = std::move(pp);
 
     return pipeline;
   }
 
-  Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const FrameContext& frameContext)
+  Pipeline* PipelineStorage::GetPipeline(const ShaderProgram& program, 
+                                         const VertexInputDeclaration& vertexInputDeclaration,
+                                         vk::PrimitiveTopology topology,
+                                         const DepthStencilSettings& depthStencilSettings,
+                                         const RasterizationMode& rasterMode,
+                                         const FrameContext& frameContext)
   {
-    return GetPipeline(program, vertexInputDeclaration, topology, depthStencilSettings, frameContext.BackbufferSize, frameContext.renderPass, frameContext.subpassNumber, frameContext.outputAttachmentBlendStates);
+    return GetPipeline(program,
+                       vertexInputDeclaration,
+                       topology,
+                       depthStencilSettings,
+                       rasterMode,
+                       frameContext.BackbufferSize,
+                       frameContext.renderPass,
+                       frameContext.subpassNumber,
+                       frameContext.outputAttachmentBlendStates);
   }
 }

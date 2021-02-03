@@ -10,6 +10,7 @@ namespace RHI::Vulkan
     const std::vector<vk::DescriptorSetLayout> layouts,
     const vk::PrimitiveTopology topology,
     const DepthStencilSettings& depthStencilSettings,
+    const RasterizationMode& rasterMode,
     const vk::Extent2D viewportExtent,
     const vk::RenderPass renderpass,
     const uint32_t subpass,
@@ -63,13 +64,13 @@ namespace RHI::Vulkan
       .setViewportCount(1);
 
     const auto rasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo()
-      .setDepthClampEnable(false)
-      .setRasterizerDiscardEnable(false)
-      .setPolygonMode(vk::PolygonMode::eFill)
-      .setCullMode(vk::CullModeFlagBits::eBack)
-      .setFrontFace(vk::FrontFace::eClockwise)
-      .setDepthBiasEnable(false)
-      .setLineWidth(1.0f);
+      .setDepthClampEnable(rasterMode.depthClampEnable)
+      .setRasterizerDiscardEnable(rasterMode.rasterizerDiscardEnable)
+      .setPolygonMode(rasterMode.polygonMode)
+      .setCullMode(rasterMode.cullMode)
+      .setFrontFace(rasterMode.frontFace)
+      .setDepthBiasEnable(rasterMode.depthBiasEnable)
+      .setLineWidth(rasterMode.lineWidth);
 
     const auto multisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo()
       .setSampleShadingEnable(false)

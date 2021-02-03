@@ -20,7 +20,7 @@ namespace RHI::Vulkan
     friend class RenderGraph;
 
     const ImageView& GetImageView(const ResourceId& id) const;
-    Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings);
+    Pipeline* GetPipeline(const ShaderProgram& program, const VertexInputDeclaration& vertexInputDeclaration, vk::PrimitiveTopology topology, const DepthStencilSettings& depthStencilSettings, const RasterizationMode& rasterMode);
     UniformsAccessor* GetUniformsAccessor(const ShaderProgram& program);
 
     vk::Extent2D BackbufferSize;

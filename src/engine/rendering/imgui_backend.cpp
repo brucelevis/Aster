@@ -131,7 +131,7 @@ namespace GUI
         fResources.vertexBuffer = std::move(vertices);
         fResources.indexBuffer = std::move(indices);
 
-        RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*imguiProgram, GetImGuiVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest);
+        RHI::Vulkan::Pipeline* pipeline = ctx.GetPipeline(*imguiProgram, GetImGuiVID(), vk::PrimitiveTopology::eTriangleList, RHI::Vulkan::DisableDepthTest, RHI::Vulkan::FillMode);
         ctx.commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->GetPipeline());
 
         RHI::Vulkan::UniformsAccessor* uniforms = ctx.GetUniformsAccessor(*imguiProgram);

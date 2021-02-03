@@ -30,6 +30,7 @@ private:
 
   float m_SphereRadius;
   int m_Segments;
+  bool m_CullNone;
 
   struct Mesh
   {

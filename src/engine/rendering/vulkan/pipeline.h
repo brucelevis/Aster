@@ -19,6 +19,7 @@ namespace RHI::Vulkan
       const std::vector<vk::DescriptorSetLayout> layouts,
       const vk::PrimitiveTopology topology,
       const DepthStencilSettings& depthStencilSettings,
+      const RasterizationMode& rasterMode,
       const vk::Extent2D viewportExtent,
       const vk::RenderPass renderpass,
       const uint32_t subpass,

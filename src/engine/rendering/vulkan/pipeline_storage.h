@@ -27,6 +27,8 @@ namespace RHI::Vulkan
 
     PipelineKey& SetDepthStencilSettings(const DepthStencilSettings& s);
 
+    PipelineKey& SetRasterMode(const RasterizationMode& rasterMode);
+
     PipelineKey& SetViewportExtent(const vk::Extent2D e);
 
     PipelineKey& SetRenderPass(const vk::RenderPass r);
@@ -42,6 +44,7 @@ namespace RHI::Vulkan
     VertexInputDeclaration vertexInputDeclaration;
     vk::PrimitiveTopology topology;
     DepthStencilSettings depthStencilSettings;
+    RasterizationMode rasterMode;
     vk::Extent2D viewportExtent;
     vk::RenderPass renderpass;
     uint32_t subpass = 0;
@@ -56,7 +59,8 @@ namespace RHI::Vulkan
     Pipeline* GetPipeline(const ShaderProgram& program, 
                           const VertexInputDeclaration& vertexInputDeclaration, 
                           vk::PrimitiveTopology topology, 
-                          const DepthStencilSettings& depthStencilSettings, 
+                          const DepthStencilSettings& depthStencilSettings,
+                          const RasterizationMode& rasterMode,
                           const vk::Extent2D& viewportExtent, 
                           vk::RenderPass renderPass, 
                           uint32_t subpassNumber, 
@@ -65,7 +69,8 @@ namespace RHI::Vulkan
     Pipeline* GetPipeline(const ShaderProgram& program, 
                           const VertexInputDeclaration& vertexInputDeclaration, 
                           vk::PrimitiveTopology topology, 
-                          const DepthStencilSettings& depthStencilSettings, 
+                          const DepthStencilSettings& depthStencilSettings,
+                          const RasterizationMode& rasterMode,
                           const FrameContext& frameContext);
 
   private:
