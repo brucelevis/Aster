@@ -1,5 +1,6 @@
 #pragma once
 
+#include <engine/rendering/vulkan/shader.h>
 #include <engine/rendering/vulkan/image.h>
 #include <engine/rendering/vulkan/buffer.h>
 
@@ -14,7 +15,6 @@ struct GLFWwindow;
 namespace RHI::Vulkan
 {
   class Core;
-  class ShaderProgram;
 
   class RenderGraph;
 }

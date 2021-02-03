@@ -34,5 +34,6 @@ add_subdirectory("${CMAKE_SOURCE_DIR}/src/engine")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/application/Aster")
 add_subdirectory("${CMAKE_SOURCE_DIR}/src/application/mesh_editor")
+add_subdirectory("${CMAKE_SOURCE_DIR}/src/application/examples")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests/shader_parsing")
