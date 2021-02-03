@@ -7,7 +7,7 @@ namespace Math
 {
   glm::mat4 Perspective(float fov, float aspect, float zNear, float zFar)
   {
-    const float tanA = std::tanf(fov / 2.0);
+    const float tanA = std::tanf(Radians(fov) / 2.0);
 
     glm::mat4 m(0);
     m[0][0] = 1 / (aspect * tanA);
